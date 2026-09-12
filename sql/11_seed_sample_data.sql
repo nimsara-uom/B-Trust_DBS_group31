@@ -24,7 +24,7 @@ INSERT INTO CUSTOMER (branch_id, agent_id, full_name, dob, national_id, phone, e
     (2, 4, 'Roshan Pathirana',   '1963-04-07', '630974500031', '0701100009', 'roshan@email.com',  'Individual'),
     (2, 4, 'Kavya Weerasinghe',  '1988-08-14', '882273456V',   '0701100010', 'kavya@email.com',   'Individual'),
 
-    (3, 5, 'Naduni Dissanayake', '2004-07-18', '2004192345780',   '0701100011', 'naduni@email.com',  'Individual'),
+    (3, 5, 'Naduni Dissanayake', '2004-07-18', '200419234578', '0701100011', 'naduni@email.com',  'Individual'),
     (3, 5, 'Bimal Cooray',       '1975-10-19', '752932345X',   '0701100012', 'bimal@email.com',   'Individual'),
     (3, 5, 'Thilini Perera',     '2015-06-03', '201515400027', '0701100013', NULL,                'Individual'),
 
