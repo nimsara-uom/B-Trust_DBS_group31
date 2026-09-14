@@ -1,6 +1,6 @@
 
 
-INSERT INTO TRANSACTION (account_id, agent_id, fd_id, reference_no, transaction_type, amount, transaction_timestamp) VALUES
+INSERT INTO BANK_TRANSACTION (account_id, agent_id, fd_id, reference_no, transaction_type, amount, transaction_timestamp) VALUES
 
 -- ── ACCOUNT 1  (Amal, Adult, SA-00001) ─────────────────────
 (1, 1, NULL, 'TXN-20220110-00001', 'Deposit',    10000.00, '2022-01-10 09:15:00'),
