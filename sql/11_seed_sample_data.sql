@@ -42,7 +42,7 @@ INSERT INTO SAVINGSACCOUNT (plan_id, account_number, opened_date, status, curren
     (2, 'SA-00008', '2024-02-14', 'Active',   6000.00),  -- account_id=8,  Dilini     (Teen)
     (4, 'SA-00009', '2018-11-30', 'Active',  90000.00),  -- account_id=9,  Roshan     (Senior)
     (3, 'SA-00010', '2022-05-17', 'Active',  30000.00),  -- account_id=10, Kavya      (Adult)
-    (3, 'SA-00011', '2021-08-09', 'Active',  22000.00),  -- account_id=11, Hiruni     (Adult)
+    (3, 'SA-00011', '2021-08-09', 'Active',  22000.00),  -- account_id=11, Naduni     (Adult)
     (3, 'SA-00012', '2020-04-23', 'Active',  55000.00),  -- account_id=12, Bimal      (Adult)
     (1, 'SA-00013', '2024-05-30', 'Active',   2000.00),  -- account_id=13, Thilini    (Children)
     (5, 'SA-00014', '2022-10-01', 'Active', 120000.00);  -- account_id=14, Joint acct (Suresh+Amara)
@@ -65,7 +65,7 @@ INSERT INTO ACCOUNTHOLDER (account_id, customer_id) VALUES
     ( 8,  8),   -- SA-00008 → Dilini
     ( 9,  9),   -- SA-00009 → Roshan
     (10, 10),   -- SA-00010 → Kavya
-    (11, 11),   -- SA-00011 → Hiruni
+    (11, 11),   -- SA-00011 → Naduni
     (12, 12),   -- SA-00012 → Bimal
     (13, 13),   -- SA-00013 → Thilini
     (14, 14),   -- SA-00014 → Suresh  (joint holder 1)
