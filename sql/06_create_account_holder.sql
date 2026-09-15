@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS ACCOUNTHOLDER (
     account_id INT NOT NULL, 
     customer_id INT NOT NULL, 
 
-    --these two form the primary key
+    -- these two form the primary key
 
     CONSTRAINT pk_account_holder PRIMARY KEY (account_id, customer_id),
     CONSTRAINT fk_holder_account
