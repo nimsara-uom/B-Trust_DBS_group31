@@ -9,4 +9,4 @@ CREATE TABLE IF NOT EXISTS FDPLAN (
     CONSTRAINT chk_fd_rate CHECK (interest_rate > 0),
     CONSTRAINT chk_fd_term CHECK (term_months > 0)
 );
---act like a lookup table with static values
+-- act like a lookup table with static values
