@@ -1,9 +1,9 @@
 CREATE TABLE IF NOT EXISTS BANK_TRANSACTION (
     transaction_id INT NOT NULL AUTO_INCREMENT,
     account_id INT NOT NULL,
-    agent_id INT NOT NULL,   
-    fd_id INT NULL,     
-    reference_no VARCHAR(30) NOT NULL,  
+    agent_id INT NOT NULL, 
+    fd_id INT NULL, 
+    reference_no VARCHAR(30) NOT NULL, 
     transaction_type ENUM('Deposit', 'Withdrawal', 'FD_Interest') NOT NULL,
     amount DECIMAL(12, 2) NOT NULL,
     transaction_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

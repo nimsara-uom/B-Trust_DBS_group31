@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS FDPLAN (
     fd_plan_id INT NOT NULL AUTO_INCREMENT,
-    term_months INT NOT NULL,          
-    interest_rate DECIMAL(5, 2) NOT NULL,           
+    term_months INT NOT NULL, 
+    interest_rate DECIMAL(5, 2) NOT NULL, 
 
     CONSTRAINT pk_fd_plan PRIMARY KEY (fd_plan_id),
     CONSTRAINT uq_fd_plan_term UNIQUE (term_months),

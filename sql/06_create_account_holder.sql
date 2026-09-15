@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS ACCOUNTHOLDER (
-    account_id  INT NOT NULL,  
-    customer_id INT NOT NULL,   
+    account_id INT NOT NULL, 
+    customer_id INT NOT NULL, 
 
     --these two form the primary key
 
@@ -9,11 +9,11 @@ CREATE TABLE IF NOT EXISTS ACCOUNTHOLDER (
         FOREIGN KEY (account_id)
         REFERENCES SAVINGSACCOUNT (account_id)
         ON UPDATE CASCADE
-        ON DELETE CASCADE,   
+        ON DELETE CASCADE, 
 
     CONSTRAINT fk_holder_customer
         FOREIGN KEY (customer_id)
         REFERENCES CUSTOMER (customer_id)
         ON UPDATE CASCADE
-        ON DELETE RESTRICT   
+        ON DELETE RESTRICT 
 );

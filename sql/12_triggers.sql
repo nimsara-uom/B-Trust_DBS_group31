@@ -7,16 +7,16 @@ CREATE TRIGGER trg_check_withdrawal
 BEFORE INSERT ON BANK_TRANSACTION
 FOR EACH ROW
 BEGIN
-    DECLARE v_current_balance  DECIMAL(12, 2);
-    DECLARE v_minimum_balance  DECIMAL(12, 2);
+    DECLARE v_current_balance DECIMAL(12, 2);
+    DECLARE v_minimum_balance DECIMAL(12, 2);
 
     IF NEW.transaction_type = 'Withdrawal' THEN
 
         SELECT sa.current_balance, sp.minimum_balance
-        INTO   v_current_balance, v_minimum_balance
-        FROM   SAVINGSACCOUNT sa
-        JOIN   SAVINGSPLAN    sp ON sa.plan_id = sp.plan_id
-        WHERE  sa.account_id = NEW.account_id;
+        INTO v_current_balance, v_minimum_balance
+        FROM SAVINGSACCOUNT sa
+        JOIN SAVINGSPLAN sp ON sa.plan_id = sp.plan_id
+        WHERE sa.account_id = NEW.account_id;
 
         IF (v_current_balance - NEW.amount) < v_minimum_balance THEN
             SIGNAL SQLSTATE '45000'
@@ -34,13 +34,13 @@ BEGIN
 
     IF NEW.transaction_type IN ('Deposit', 'FD_Interest') THEN
         UPDATE SAVINGSACCOUNT
-        SET    current_balance = current_balance + NEW.amount
-        WHERE  account_id = NEW.account_id;
+        SET current_balance = current_balance + NEW.amount
+        WHERE account_id = NEW.account_id;
 
     ELSEIF NEW.transaction_type = 'Withdrawal' THEN
         UPDATE SAVINGSACCOUNT
-        SET    current_balance = current_balance - NEW.amount
-        WHERE  account_id = NEW.account_id;
+        SET current_balance = current_balance - NEW.amount
+        WHERE account_id = NEW.account_id;
 
     END IF;
 
@@ -53,7 +53,7 @@ BEFORE UPDATE ON FIXEDDEPOSIT
 FOR EACH ROW
 BEGIN
 
-    -- Only check FDs that are still Active
+    -- Only check FD that are still Active
     IF OLD.status = 'Active' THEN
 
         -- If the next scheduled interest date has reached or passed maturity

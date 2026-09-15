@@ -1,10 +1,10 @@
 CREATE TABLE IF NOT EXISTS FIXEDDEPOSIT (
     fd_id INT NOT NULL AUTO_INCREMENT,
-    account_id INT NOT NULL,  
-    fd_plan_id INT NOT NULL,  
-    principal_amount DECIMAL(12, 2) NOT NULL,  
+    account_id INT NOT NULL, 
+    fd_plan_id INT NOT NULL, 
+    principal_amount DECIMAL(12, 2) NOT NULL, 
     start_date DATE NOT NULL,
-    maturity_date DATE NOT NULL,  
+    maturity_date DATE NOT NULL, 
     next_interest_date DATE NOT NULL, 
     status ENUM('Active', 'Matured', 'Closed') NOT NULL DEFAULT 'Active',
 
