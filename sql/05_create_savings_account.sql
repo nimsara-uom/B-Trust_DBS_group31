@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS SAVINGSACCOUNT (
     account_id INT NOT NULL AUTO_INCREMENT,
-    plan_id INT NOT NULL,   
-    account_number VARCHAR(20) NOT NULL,  
+    plan_id INT NOT NULL, 
+    account_number VARCHAR(20) NOT NULL, 
     opened_date DATE NOT NULL,
     status ENUM('Active', 'Inactive', 'Closed') NOT NULL DEFAULT 'Active',
     current_balance DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
