@@ -14,6 +14,9 @@ BEGIN
     -- Start the ACID transaction
     START TRANSACTION;
 
+    -- Lock the account to prevent deadlocks (S-lock vs X-lock deadlock on FK check + trigger update)
+    SELECT account_id INTO @dummy FROM SAVINGSACCOUNT WHERE account_id = p_AccountID FOR UPDATE;
+
     -- Insert the record. Triggers will handle the balance update automatically.
     INSERT INTO BANK_TRANSACTION (
         account_id, agent_id, reference_no, transaction_type, amount, transaction_timestamp
@@ -36,6 +39,9 @@ CREATE PROCEDURE sp_ProcessWithdrawal(
 BEGIN
     -- Start the ACID transaction
     START TRANSACTION;
+
+    -- Lock the account to prevent deadlocks (S-lock vs X-lock deadlock on FK check + trigger update)
+    SELECT account_id INTO @dummy FROM SAVINGSACCOUNT WHERE account_id = p_AccountID FOR UPDATE;
 
     -- Insert the record. Triggers will block overdrafts and update the balance.
     INSERT INTO BANK_TRANSACTION (
