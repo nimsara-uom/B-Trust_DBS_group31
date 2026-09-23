@@ -67,3 +67,34 @@ END$$
 
 
 DELIMITER ;
+
+
+DROP TRIGGER IF EXISTS trg_CheckSingleFDConstraint;
+ 
+DELIMITER //
+ 
+CREATE TRIGGER trg_CheckSingleFDConstraint
+BEFORE INSERT ON FIXEDDEPOSIT
+FOR EACH ROW              -- "for each row" being inserted, run this check
+BEGIN
+    -- This variable will hold how many ACTIVE FDs this account already has
+    DECLARE existing_count INT;
+ 
+    -- NEW.status means "the status value of the row that is being inserted"
+    IF NEW.status = 'ACTIVE' THEN
+ 
+        SELECT COUNT(*) INTO existing_count
+        FROM FIXEDDEPOSIT
+        WHERE account_id = NEW.account_id
+          AND status = 'ACTIVE';
+ 
+        -- If we already found 1 or more, block the insert with an error
+        IF existing_count > 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Error: This account already has an ACTIVE Fixed Deposit.';
+        END IF;
+ 
+    END IF;
+END //
+ 
+DELIMITER ;
