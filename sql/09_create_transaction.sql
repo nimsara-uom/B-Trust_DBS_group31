@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS BANK_TRANSACTION (
     transaction_type ENUM('Deposit', 'Withdrawal', 'FD_Interest') NOT NULL,
     amount DECIMAL(12, 2) NOT NULL,
     transaction_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
---meka balala deposit, withdraw, start trasaction  nad mekai edit karanna 
+-- meka balala deposit, withdraw, start trasaction  nad mekai edit karanna 
     CONSTRAINT pk_transaction PRIMARY KEY (transaction_id),
     CONSTRAINT uq_transaction_ref UNIQUE (reference_no),
 
