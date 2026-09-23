@@ -1,4 +1,5 @@
 select 
+	a.agent_id as agent_id,
     a.agent_name as agent_name, 
     count(tr.transaction_id) as number_of_transactions,
     sum(tr.amount) as total_amount,
