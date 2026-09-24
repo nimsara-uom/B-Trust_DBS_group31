@@ -1,0 +1,10 @@
+# Core backend dependencies
+fastapi>=0.115.0
+uvicorn>=0.30.0
+
+# Will be added later as needed:
+# mysql-connector-python>=8.0
+# python-dotenv>=1.0
+# pyjwt>=2.8
+# passlib>=1.7
+# python-multipart>=0.0.9
