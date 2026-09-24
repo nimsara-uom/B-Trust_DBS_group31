@@ -6,7 +6,7 @@ from typing import Optional
 class FixedDepositCreate(BaseModel):
     account_id: int = Field(..., description = "Savings account ID (must have only 1 active FD)")
     fd_plan_id: int = Field(..., description = "ID of the Fixed Deposit plan (e.g., 6m, 1yr, 3yr)")
-    principal_amount: float = Field(..., gt=0, description = "Principal deposit amount")
+    principal_amount: Decimal = Field(..., gt=0, description = "Principal deposit amount")
 
 class FixedDepositResponse(BaseModel):
     fd_id: int
