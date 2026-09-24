@@ -47,3 +47,10 @@ class CustomerActivitySummaryResponse(BaseModel):
     total_deposit: Decimal
     total_withdrawal: Decimal
     net_balance: Decimal
+
+class MonthlyBankTransactionSummaryResponse(BaseModel):
+    year: int
+    month: int
+    number_of_transactions: int
+    total_amount: Decimal
+    net_movement: Decimal
