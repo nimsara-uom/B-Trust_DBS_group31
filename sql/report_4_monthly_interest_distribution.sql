@@ -5,8 +5,8 @@ select
     sa.account_number as account_number,
     c.full_name as customer_name,
     concat(fp.term_months, ' months') as plan_name,
-    count(tr.transaction_id) as number_of_interest_creadits,
-    sum(tr.amount) as total_inerest_creadited
+    count(tr.transaction_id) as number_of_interest_credits,
+    sum(tr.amount) as total_interest_credited
 from bank_transaction tr
     join fixeddeposit fd on fd.fd_id = tr.fd_id
     join savingsaccount sa on sa.account_id = fd.account_id
