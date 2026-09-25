@@ -10,4 +10,4 @@ join bank_transaction tr on ac.account_id = tr.account_id
 group by 
     cu.customer_id, 
     cu.full_name
-order by sum(tr.amount) desc;
+order by number_of_transactions desc;

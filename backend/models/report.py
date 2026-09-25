@@ -42,7 +42,6 @@ class MonthlyInterestDistributionResponse(BaseModel):
 
 class CustomerActivitySummaryResponse(BaseModel):
     customer_name: str
-    account_number: str
     number_of_transactions: int
     total_deposit: Decimal
     total_withdrawal: Decimal
