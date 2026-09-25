@@ -118,7 +118,7 @@ def get_customer_activity_summary(cursor):
     cursor.execute(query)
     return cursor.fetchall()
 
-def get_monthly_transaction_summary(cursor):
+def get_monthly_bank_transaction_summary(cursor):
     query = """
         select 
             year,
