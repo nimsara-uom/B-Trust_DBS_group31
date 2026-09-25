@@ -10,18 +10,32 @@ def get_fd_plans(cursor):
 
 #get fixeddeposits by custom filters
 def get_fixed_deposits(cursor, status = None, account_id = None):
-    query = "select * from fixeddeposit where 1=1"
+    query = """
+        select 
+            fd.fd_id,
+            fd.account_id,
+            fd.fd_plan_id,
+            fd.principal_amount,
+            fd.start_date,
+            fd.maturity_date,
+            fd.next_interest_date,
+            fd.status,
+            fp.interest_rate,
+            fp.term_months
+        from fixeddeposit fd
+            join fdplan fp on fd.fd_plan_id = fp.fd_plan_id
+        where 1 = 1 """
     params = []
 
     if status:
-        query += " and status = %s"
+        query += " and fd.status = %s"
         params.append(status)
 
-    if account_id:
-        query += " and account_id = %s"
+    if account_id is not None:
+        query += " and fd.account_id = %s"
         params.append(account_id)
 
-    query += " order by start_date desc"
+    query += " order by fd.start_date desc"
 
     cursor.execute(query, params)
     return cursor.fetchall()
@@ -29,18 +43,40 @@ def get_fixed_deposits(cursor, status = None, account_id = None):
 #filter fds by fd_id
 def get_fixed_deposit_by_id(cursor, fd_id):
     cursor.execute("""
-        select *
-        from fixeddeposit
-        where fd_id = %s """, (fd_id,))
+        select 
+            fd.fd_id,
+            fd.account_id,
+            fd.fd_plan_id,
+            fd.principal_amount,
+            fd.start_date,
+            fd.maturity_date,
+            fd.next_interest_date,
+            fd.status,
+            fp.interest_rate,
+            fp.term_months
+        from fixeddeposit fd
+            join fdplan fp on fd.fd_plan_id = fp.fd_plan_id
+        where fd.fd_id = %s """, (fd_id,))
 
     return cursor.fetchone()
 
 #filter fds by account_id
 def get_fixed_deposit_by_account(cursor, account_id):
     cursor.execute("""
-        select *
-        from fixeddeposit
-        where account_id = %s """, (account_id,))
+        select 
+            fd.fd_id,
+            fd.account_id,
+            fd.fd_plan_id,
+            fd.principal_amount,
+            fd.start_date,
+            fd.maturity_date,
+            fd.next_interest_date,
+            fd.status,
+            fp.interest_rate,
+            fp.term_months
+        from fixeddeposit fd
+            join fdplan fp on fd.fd_plan_id = fp.fd_plan_id
+        where fd.account_id = %s """, (account_id,))
 
     return cursor.fetchone()
 
@@ -52,7 +88,8 @@ def create_fixed_deposit(cursor, data):
         """
         select fd_id
         from fixeddeposit
-        where account_id = %s""", (data.account_id,)
+        where account_id = %s
+            and status = 'Active' """, (data.account_id,)
     )
 
     exist_fd = cursor.fetchone()

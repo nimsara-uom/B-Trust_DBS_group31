@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
 
 class FixedDepositCreate(BaseModel):
     account_id: int = Field(..., description = "Savings account ID (must have only 1 active FD)")
@@ -19,7 +18,6 @@ class FixedDepositResponse(BaseModel):
     status: str  # Active, Matured, Closed
     interest_rate: float
     term_months: int
-    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
