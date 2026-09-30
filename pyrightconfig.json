@@ -1,0 +1,14 @@
+{
+  "extraPaths": [
+    "C:/Users/User/AppData/Local/Programs/Python/Python313/Lib/site-packages",
+    "backend"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "backend",
+      "extraPaths": [
+        "C:/Users/User/AppData/Local/Programs/Python/Python313/Lib/site-packages"
+      ]
+    }
+  ]
+}
