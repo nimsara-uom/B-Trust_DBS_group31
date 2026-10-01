@@ -1,0 +1,92 @@
+.fd-plan-card {
+  border-radius: var(--radius-lg);
+  padding: 32px 24px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.fd-plan-card:hover {
+  transform: translateY(-5px);
+}
+
+.fd-plan-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+  pointer-events: none;
+}
+
+.bg-blue-gradient {
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+}
+
+.bg-purple-gradient {
+  background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+}
+
+.bg-green-gradient {
+  background: linear-gradient(135deg, #10B981 0%, #047857 100%);
+}
+
+.fd-plan-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(255,255,255,0.2);
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.fd-plan-card h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.fd-rate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.15);
+  padding: 16px 24px;
+  border-radius: var(--radius-md);
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.rate-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.rate-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.9;
+}
+
+.fd-desc {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.text-yellow-600 {
+  color: #CA8A04 !important;
+}
