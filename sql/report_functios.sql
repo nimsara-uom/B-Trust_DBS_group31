@@ -25,7 +25,7 @@ begin
                 transaction_type = 'Withdrawal');
 end //
 
---------------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------------------------------
 -- functions for calculate customer transactions
 -- calculate the total deposit of a account
 create function if not exists customer_total_deposit_amount(paccount_id int)
