@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from auth import get_current_user
 from database import get_db
+from routers import transactions
 
 app = FastAPI(
     title="MIMS API",
@@ -17,6 +18,9 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers
 )
+
+# Register routers
+app.include_router(transactions.router)
 
 @app.get("/health")
 def health_check(db=Depends(get_db)):
