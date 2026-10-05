@@ -1,32 +1,62 @@
-from fastapi import FastAPI, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from auth import get_current_user
-from database import get_db
-from routers import transactions
+"""
+Microbanking Management System — FastAPI Backend
+=================================================
+Entry point for the backend server.
+Run with:  uvicorn main:app --reload
+"""
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from routers import transactions
+from routers import fixed_deposit
+from routers import report
+
+# ---------------------------------------------------------------------------
+# Create the FastAPI application
+# ---------------------------------------------------------------------------
 app = FastAPI(
     title="MIMS API",
-    description="Microbanking & Interest Management System",
-    version="1.0.0"
+    description="Microbanking & Interest Management System — DBS Group 31",
+    version="1.0.0",
 )
 
-# Add CORS middleware to allow the frontend to connect without errors
+# ---------------------------------------------------------------------------
+# CORS — allows the React frontend (Vite) to talk to this API
+# ---------------------------------------------------------------------------
+origins = [
+    "http://localhost:5173",   # Vite default
+    "http://localhost:3000",   # common React port
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+# ---------------------------------------------------------------------------
 # Register routers
-app.include_router(transactions.router)
+# ---------------------------------------------------------------------------
+app.include_router(transactions.router, prefix="/api")
+app.include_router(fixed_deposit.router, prefix="/api")
+app.include_router(report.router, prefix="/api")
+
+
+# ---------------------------------------------------------------------------
+# Root & Health endpoints
+# ---------------------------------------------------------------------------
+@app.get("/")
+def root():
+    """Root endpoint — quick confirmation the server is running."""
+    return {"message": "MIMS API is running. Visit /docs for Swagger UI."}
+
 
 @app.get("/health")
-def health_check(db=Depends(get_db)):
-    """
-    Health check endpoint to verify that the API is running and the database is connected.
-    """
-    # If the database connection is successful, the get_db dependency will provide a cursor
-    # and this endpoint will return a success message.
-    return {"status": "ok", "database": "connected"}
+def health_check():
+    """Health-check endpoint used for monitoring / quick tests."""
+    return {"status": "ok"}

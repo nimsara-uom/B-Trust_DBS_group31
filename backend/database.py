@@ -1,56 +1,50 @@
+"""
+database.py — Database Connection
+===================================
+Creates a MySQL connection pool and exposes get_db(), a FastAPI dependency
+that yields (cursor, conn) to route handlers.
+
+Usage in a router:
+    from database import get_db
+    ...
+    def my_route(db=Depends(get_db)):
+        cursor, conn = db
+        cursor.execute("SELECT ...")
+"""
+
 import mysql.connector
 from mysql.connector import pooling
-from fastapi import HTTPException, status
-from config import settings
 
-# Create a connection pool to connect to the database
-try:
-    db_pool = pooling.MySQLConnectionPool(
-        pool_name="mims_pool",
-        pool_size=5,
-        pool_reset_session=True,
-        host=settings.DB_HOST,
-        port=settings.DB_PORT,
-        user=settings.DB_USER,
-        password=settings.DB_PASSWORD,
-        database=settings.DB_NAME
-    )
-except mysql.connector.Error as err:
-    print(f"Error creating connection pool: {err}")
-    db_pool = None
+from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
 
+# ---------------------------------------------------------------------------
+# Connection pool — created once at import time
+# ---------------------------------------------------------------------------
+_pool = pooling.MySQLConnectionPool(
+    pool_name="microbanking_pool",
+    pool_size=5,
+    host=DB_HOST,
+    port=DB_PORT,
+    user=DB_USER,
+    password=DB_PASSWORD,
+    database=DB_NAME,
+)
+
+
+# ---------------------------------------------------------------------------
+# FastAPI dependency
+# ---------------------------------------------------------------------------
 def get_db():
     """
-    FastAPI Dependency: Yields a Database Cursor for each API Request
-    and safely closes it at the end.
+    Yields a (cursor, conn) tuple for use inside a route handler.
+    The connection is returned to the pool automatically when the
+    request finishes (whether it succeeds or raises an exception).
     """
-    if db_pool is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database connection pool is not initialized."
-        )
-    
-    connection = None
-    cursor = None
+    conn = _pool.get_connection()
+    cursor = conn.cursor(dictionary=True)   # rows come back as dicts
     try:
-        # Get a connection from the pool
-        connection = db_pool.get_connection()
-        # dictionary=True returns results as Python Dictionaries
-        cursor = connection.cursor(dictionary=True)
-        
-        yield cursor  # Yield the cursor to the API endpoint
-        
-        connection.commit()  # Commit changes if successful
-    except mysql.connector.Error as err:
-        if connection:
-            connection.rollback()  # Rollback changes on error
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database Error: {err}"
-        )
+        yield cursor, conn
     finally:
-        # Auto-close the cursor and connection after the request
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
+        cursor.close()
+        conn.close()   # returns the connection to the pool
+
