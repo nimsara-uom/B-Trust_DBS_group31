@@ -55,7 +55,8 @@ class AccountCreate(BaseModel):
     customer_id: int = Field(gt=0, description="Customer ID of the primary account owner")
     plan_id: int = Field(gt=0, description="Plan ID (1=Children, 2=Teen, 3=Adult, 4=Senior, 5=Joint)")
     initial_deposit: Decimal = Field(
-        ge=0,
+        ...,
+        ge=Decimal("0.00"),
         description="Initial deposit amount (must be >= minimum balance for the plan)"
     )
 
