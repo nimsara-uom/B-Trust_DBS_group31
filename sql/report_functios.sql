@@ -28,26 +28,28 @@ end //
 --------------------------------------------------------------------------------------------------------------------------------------------
 -- functions for calculate customer transactions
 -- calculate the total deposit of a account
-create function if not exists customer_total_deposit_amount(paccount_id int)
+create function if not exists customer_total_deposit_amount(cus_id int)
 returns decimal(12,2)
 
 reads sql data
 begin
     return (select coalesce(sum(amount), 0) 
-            from bank_transaction 
-            where paccount_id = account_id and 
+            from bank_transaction tr
+            join accountholder a on tr.account_id = a.account_id
+            where cus_id = a.customer_id and 
                 transaction_type = 'Deposit');
 end //
 
 -- calculate the total withdrawal of a ccount
-create function if not exists customer_total_withdrawal_amount(paccount_id int)
+create function if not exists customer_total_withdrawal_amount(cus_id int)
 returns decimal(12,2)
 
 reads sql data
 begin
     return (select coalesce(sum(amount), 0) 
-            from bank_transaction 
-            where paccount_id = account_id and 
+            from bank_transaction tr
+            join accountholder a on tr.account_id = a.account_id
+            where cus_id = a.customer_id and 
                 transaction_type = 'Withdrawal');
 end //
 
