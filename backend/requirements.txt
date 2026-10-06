@@ -1,11 +1,5 @@
-# Core backend dependencies
-fastapi>=0.115.0
-uvicorn>=0.30.0
-pydantic[email]>=2.0       # EmailStr validation (used in customer.py)
-mysql-connector-python>=8.0
-python-dotenv>=1.0
-
-# Will be added later as needed:
-# pyjwt>=2.8
-# passlib>=1.7
-# python-multipart>=0.0.9
+fastapi
+uvicorn[standard]
+mysql-connector-python
+python-dotenv
+pydantic

@@ -1,53 +1,28 @@
-"""
-Microbanking Management System — FastAPI Backend
-=================================================
-Entry point for the backend server.
-Run with:  uvicorn main:app --reload
-"""
-
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from auth import get_current_user
+from database import get_db
 
-# ---------------------------------------------------------------------------
-# Create the FastAPI application
-# ---------------------------------------------------------------------------
 app = FastAPI(
-    title="Microbanking Management System",
-    description="Backend API for the DBS Group 31 banking project",
-    version="0.1.0",
+    title="MIMS API",
+    description="Microbanking & Interest Management System",
+    version="1.0.0"
 )
 
-# ---------------------------------------------------------------------------
-# CORS configuration — allows the React frontend to talk to this API
-# ---------------------------------------------------------------------------
-# During development the Vite dev-server usually runs on http://localhost:5173.
-# We list the origins we want to allow here.
-origins = [
-    "http://localhost:5173",   # Vite default
-    "http://localhost:3000",   # common React port
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:3000",
-]
-
+# Add CORS middleware to allow the frontend to connect without errors
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,       # which frontends can call us
-    allow_credentials=True,      # allow cookies / auth headers
-    allow_methods=["*"],         # allow all HTTP methods (GET, POST, etc.)
-    allow_headers=["*"],         # allow all headers
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
 )
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
-
-@app.get("/")
-def root():
-    """Root endpoint — quick confirmation the server is running."""
-    return {"message": "Microbanking Management System API"}
-
-
 @app.get("/health")
-def health_check():
-    """Health-check endpoint used for monitoring / quick tests."""
-    return {"status": "ok"}
+def health_check(db=Depends(get_db)):
+    """
+    Health check endpoint to verify that the API is running and the database is connected.
+    """
+    # If the database connection is successful, the get_db dependency will provide a cursor
+    # and this endpoint will return a success message.
+    return {"status": "ok", "database": "connected"}
