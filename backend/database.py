@@ -1,11 +1,15 @@
+import os
 import mysql.connector
 from mysql.connector import pooling
 from fastapi import HTTPException, status
 from config import settings
 
+# SSL is required for Aiven MySQL. Set DB_USE_SSL=true in .env when deploying.
+_use_ssl: bool = os.getenv("DB_USE_SSL", "false").lower() == "true"
+
 # Create a connection pool to connect to the database
 try:
-    db_pool = pooling.MySQLConnectionPool(
+    pool_kwargs = dict(
         pool_name="mims_pool",
         pool_size=5,
         pool_reset_session=True,
@@ -13,11 +17,14 @@ try:
         port=settings.DB_PORT,
         user=settings.DB_USER,
         password=settings.DB_PASSWORD,
-        database=settings.DB_NAME
+        database=settings.DB_NAME,
+        ssl_disabled=not _use_ssl,          # False = SSL ON, True = SSL OFF
     )
+    db_pool = pooling.MySQLConnectionPool(**pool_kwargs)
 except mysql.connector.Error as err:
     print(f"Error creating connection pool: {err}")
     db_pool = None
+
 
 def get_db():
     """
