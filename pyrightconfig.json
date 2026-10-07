@@ -1,13 +1,16 @@
 {
+  "venvPath": "backend",
+  "venv": "venv",
+  "pythonPath": "backend/venv/Scripts/python.exe",
   "extraPaths": [
-    "C:/Users/User/AppData/Local/Programs/Python/Python313/Lib/site-packages",
+    "backend/venv/Lib/site-packages",
     "backend"
   ],
   "executionEnvironments": [
     {
       "root": "backend",
       "extraPaths": [
-        "C:/Users/User/AppData/Local/Programs/Python/Python313/Lib/site-packages"
+        "venv/Lib/site-packages"
       ]
     }
   ]
