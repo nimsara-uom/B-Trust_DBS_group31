@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from mysql.connector import Error
 
-from backend.database import get_db
-from backend.models.report import (
+from database import get_db
+from models.report import (
     AgentTransactionSummaryResponse,
     AccountTransactionSummaryResponse,
     ActiveFDReportResponse,
@@ -11,7 +11,7 @@ from backend.models.report import (
     CustomerActivitySummaryResponse,
     MonthlyBankTransactionSummaryResponse
 )
-from backend.crud import reports as crud_reports
+from crud import report as crud_reports
 
 router = APIRouter(prefix = "/reports", tags = ["Reports"])
 
