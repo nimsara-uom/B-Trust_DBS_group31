@@ -45,7 +45,7 @@ def get_db():
         # dictionary=True returns results as Python Dictionaries
         cursor = connection.cursor(dictionary=True)
         
-        yield cursor  # Yield the cursor to the API endpoint
+        yield cursor, connection  # Yield both cursor and connection to API endpoints
         
         connection.commit()  # Commit changes if successful
     except mysql.connector.Error as err:
