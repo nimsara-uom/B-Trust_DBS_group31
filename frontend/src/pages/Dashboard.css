@@ -1,0 +1,230 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.welcome-banner {
+  background: linear-gradient(135deg, #E6F0FA 0%, #F5F9FF 100%);
+  border-radius: var(--radius-lg);
+  padding: 32px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-banner::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill="%23D6EAF8" d="M0,50 C30,70 70,30 100,50 L100,100 L0,100 Z" opacity="0.5"/></svg>');
+  background-size: cover;
+  background-position: bottom;
+  pointer-events: none;
+}
+
+.welcome-banner h1 {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.welcome-banner h1 span {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-charcoal-900);
+}
+
+.welcome-banner p {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.banner-art {
+  font-family: cursive;
+  color: var(--color-primary-hover);
+  font-size: 1.5rem;
+  text-align: right;
+  line-height: 1.2;
+  transform: rotate(-5deg);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-blue-100 { background: #EBF5FF; }
+.text-blue-600 { color: #2563EB; }
+.bg-green-100 { background: #DCFCE7; }
+.text-green-600 { color: #16A34A; }
+.bg-yellow-100 { background: #FEF9C3; }
+.text-yellow-600 { color: #CA8A04; }
+.bg-purple-100 { background: #F3E8FF; }
+.text-purple-600 { color: #9333EA; }
+.bg-red-100 { background: #FEE2E2; }
+.text-red-600 { color: #DC2626; }
+.bg-pink-100 { background: #FCE7F3; }
+.text-pink-500 { color: #EC4899; }
+
+.stat-card h3 {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.card-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.date-select {
+  border: 1px solid var(--color-border);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  background: transparent;
+}
+
+.chart-container {
+  height: 250px;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-slate-50);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  color: var(--color-text-main);
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  border-color: var(--color-primary);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.mt-6 { margin-top: 24px; }
+
+.view-all {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--color-primary-hover);
+  font-weight: 500;
+}
+
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.txn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+}
+
+.txn-details {
+  flex: 1;
+}
+
+.txn-details h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.txn-details span {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.txn-amount {
+  font-weight: 700;
+  font-size: 1rem;
+}
