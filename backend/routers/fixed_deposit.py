@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
 from mysql.connector import Error
 
-from backend.database import get_db
-from backend.models.fixed_deposit import (
+from database import get_db
+from models.fixed_deposit import (
     FixedDepositCreate,
     FixedDepositResponse,
     InterestEngineRunRequest
 )
-from backend.crud import fixed_deposits as crud_fd
+from crud import fixed_deposit as crud_fd
 
 router = APIRouter(prefix = "/fixed-deposits", tags = ["Fixed Deposits"])
 
