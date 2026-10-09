@@ -110,7 +110,7 @@ def create_fixed_deposit(cursor, data):
     if plan is None:
         raise ValueError("Invalid FD plan")
 
-    term_months = plan[0]
+    term_months = plan["term_months"]
 
     # Calculate dates
     start_date = date.today()

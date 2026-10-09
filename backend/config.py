@@ -1,8 +1,9 @@
 import os
 from dotenv import load_dotenv
-
+# Load .env file from the same directory as config.py or fallback to current directory
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+load_dotenv(dotenv_path=env_path)
 load_dotenv()
-
 
 class Settings:
     DB_HOST = os.getenv("DB_HOST", "localhost")
