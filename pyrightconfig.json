@@ -1,0 +1,17 @@
+{
+  "venvPath": "backend",
+  "venv": "venv",
+  "pythonPath": "backend/venv/Scripts/python.exe",
+  "extraPaths": [
+    "backend/venv/Lib/site-packages",
+    "backend"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "backend",
+      "extraPaths": [
+        "venv/Lib/site-packages"
+      ]
+    }
+  ]
+}

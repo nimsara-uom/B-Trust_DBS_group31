@@ -1,0 +1,19 @@
+import os
+from dotenv import load_dotenv
+# Load .env file from the same directory as config.py or fallback to current directory
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+load_dotenv(dotenv_path=env_path)
+load_dotenv()
+
+class Settings:
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = int(os.getenv("DB_PORT", "3306"))
+    DB_USER = os.getenv("DB_USER", "root")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+    DB_NAME = os.getenv("DB_NAME", "")
+
+    AUTH_USERNAME = os.getenv("AUTH_USERNAME", "admin")
+    AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "")
+
+
+settings = Settings()
