@@ -31,7 +31,7 @@ def deposit(data: DepositRequest, db=Depends(get_db)):
 
         # Fetch the newly created transaction by reference number
         cursor.execute(
-            "SELECT * FROM bank_transaction WHERE reference_no = %s",
+            "SELECT * FROM BANK_TRANSACTION WHERE reference_no = %s",
             (data.reference_no,)
         )
         txn = cursor.fetchone()
@@ -72,7 +72,7 @@ def withdraw(data: WithdrawalRequest, db=Depends(get_db)):
 
         # Fetch the newly created transaction by reference number
         cursor.execute(
-            "SELECT * FROM bank_transaction WHERE reference_no = %s",
+            "SELECT * FROM BANK_TRANSACTION WHERE reference_no = %s",
             (data.reference_no,)
         )
         txn = cursor.fetchone()

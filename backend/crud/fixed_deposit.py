@@ -4,7 +4,7 @@ from dateutil.relativedelta import relativedelta
 def get_fd_plans(cursor):
     cursor.execute("""
     select *
-        from fdplan 
+        from FDPLAN 
         order by term_months""")
     return cursor.fetchall()
 
@@ -22,8 +22,8 @@ def get_fixed_deposits(cursor, status = None, account_id = None):
             fd.status,
             fp.interest_rate,
             fp.term_months
-        from fixeddeposit fd
-            join fdplan fp on fd.fd_plan_id = fp.fd_plan_id
+        from FIXEDDEPOSIT fd
+            join FDPLAN fp on fd.fd_plan_id = fp.fd_plan_id
         where 1 = 1 """
     params = []
 
@@ -54,8 +54,8 @@ def get_fixed_deposit_by_id(cursor, fd_id):
             fd.status,
             fp.interest_rate,
             fp.term_months
-        from fixeddeposit fd
-            join fdplan fp on fd.fd_plan_id = fp.fd_plan_id
+        from FIXEDDEPOSIT fd
+            join FDPLAN fp on fd.fd_plan_id = fp.fd_plan_id
         where fd.fd_id = %s """, (fd_id,))
 
     return cursor.fetchone()
@@ -74,8 +74,8 @@ def get_fixed_deposit_by_account(cursor, account_id):
             fd.status,
             fp.interest_rate,
             fp.term_months
-        from fixeddeposit fd
-            join fdplan fp on fd.fd_plan_id = fp.fd_plan_id
+        from FIXEDDEPOSIT fd
+            join FDPLAN fp on fd.fd_plan_id = fp.fd_plan_id
         where fd.account_id = %s """, (account_id,))
 
     return cursor.fetchone()
@@ -87,7 +87,7 @@ def create_fixed_deposit(cursor, data):
     cursor.execute(
         """
         select fd_id
-        from fixeddeposit
+        from FIXEDDEPOSIT
         where account_id = %s
             and status = 'Active' """, (data.account_id,)
     )
@@ -101,7 +101,7 @@ def create_fixed_deposit(cursor, data):
     cursor.execute(
         """
         select term_months
-        from fdplan
+        from FDPLAN
         where fd_plan_id = %s """,(data.fd_plan_id,)
     )
 
@@ -118,7 +118,7 @@ def create_fixed_deposit(cursor, data):
     next_interest_date = start_date + relativedelta(months=1)
 
     query = """
-        insert into fixeddeposit
+        insert into FIXEDDEPOSIT
         (
             account_id,
             fd_plan_id,

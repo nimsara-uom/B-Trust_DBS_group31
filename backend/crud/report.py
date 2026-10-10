@@ -8,8 +8,8 @@ def get_agent_transaction_summary(cursor):
             agent_total_deposit_amount(a.agent_id) as total_deposits, 
             agent_total_withdrawal_amount(a.agent_id) as total_withdrawals
             
-        from agent a 
-            left join bank_transaction tr 
+        from AGENT a 
+            left join BANK_TRANSACTION tr 
             on a.agent_id = tr.agent_id 
         group by a.agent_id, a.agent_name 
         order by count(tr.transaction_id) desc;
@@ -26,11 +26,11 @@ def get_account_transaction_summary(cursor):
             count(tr.account_id) as number_of_transactions,
             sum(tr.amount) as total_amount,
             sa.current_balance as current_balance
-        from savingsaccount sa 
-            join accountholder a on a.account_id = sa.account_id
-            join customer c on a.customer_id = c.customer_id
-            join savingsplan sp on sa.plan_id = sp.plan_id
-            join bank_transaction tr on sa.account_id = tr.account_id
+        from SAVINGSACCOUNT sa 
+            join ACCOUNTHOLDER a on a.account_id = sa.account_id
+            join CUSTOMER c on a.customer_id = c.customer_id
+            join SAVINGSPLAN sp on sa.plan_id = sp.plan_id
+            join BANK_TRANSACTION tr on sa.account_id = tr.account_id
         group by 
             sa.account_id,
             sa.account_number, 
@@ -56,11 +56,11 @@ def get_active_fds_report(cursor):
             fd.start_date as start_date,
             fd.maturity_date as maturity_date,
             fd.next_interest_date as next_interest_date
-        from fixeddeposit fd
-            join accountholder a on a.account_id = fd.account_id
-            join customer c on c.customer_id = a.customer_id
-            join savingsaccount sa on sa.account_id = fd.account_id
-            join fdplan fp on fp.fd_plan_id = fd.fd_plan_id
+        from FIXEDDEPOSIT fd
+            join ACCOUNTHOLDER a on a.account_id = fd.account_id
+            join CUSTOMER c on c.customer_id = a.customer_id
+            join SAVINGSACCOUNT sa on sa.account_id = fd.account_id
+            join FDPLAN fp on fp.fd_plan_id = fd.fd_plan_id
             where fd.status = 'Active'
         order by fd.fd_id;
     """
@@ -78,12 +78,12 @@ def get_monthly_interest_distribution(cursor):
             concat(fp.term_months, ' months') as plan_name,
             count(tr.transaction_id) as number_of_interest_credits,
             sum(tr.amount) as total_interest_credited
-        from bank_transaction tr
-            join fixeddeposit fd on fd.fd_id = tr.fd_id
-            join savingsaccount sa on sa.account_id = fd.account_id
-            join accountholder a on a.account_id = sa.account_id
-            join customer c on a.customer_id = c.customer_id
-            join fdplan fp on fp.fd_plan_id = fd.fd_plan_id
+        from BANK_TRANSACTION tr
+            join FIXEDDEPOSIT fd on fd.fd_id = tr.fd_id
+            join SAVINGSACCOUNT sa on sa.account_id = fd.account_id
+            join ACCOUNTHOLDER a on a.account_id = sa.account_id
+            join CUSTOMER c on a.customer_id = c.customer_id
+            join FDPLAN fp on fp.fd_plan_id = fd.fd_plan_id
             where tr.transaction_type = 'FD_Interest'
         group by 
             year(tr.transaction_timestamp), 
@@ -107,9 +107,9 @@ def get_customer_activity_summary(cursor):
             customer_total_deposit_amount(cu.customer_id) as total_deposit,
             customer_total_withdrawal_amount(cu.customer_id) as total_withdrawal,
             customer_total_deposit_amount(cu.customer_id) - customer_total_withdrawal_amount(cu.customer_id) as net_balance
-        from customer cu 
-        join accountholder ac on cu.customer_id = ac.customer_id 
-        join bank_transaction tr on ac.account_id = tr.account_id 
+        from CUSTOMER cu 
+        join ACCOUNTHOLDER ac on cu.customer_id = ac.customer_id 
+        join BANK_TRANSACTION tr on ac.account_id = tr.account_id 
         group by 
             cu.customer_id, 
             cu.full_name
@@ -132,7 +132,7 @@ def get_monthly_bank_transaction_summary(cursor):
                 month(transaction_timestamp) as month,
                 count(transaction_id) as number_of_transactions,
                 sum(amount) as total_amount
-            from bank_transaction
+            from BANK_TRANSACTION
             group by 
                 year(transaction_timestamp),
                 month(transaction_timestamp)) as monthly_data

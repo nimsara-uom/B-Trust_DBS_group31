@@ -14,23 +14,19 @@ import './App.css';
 const Sidebar = () => {
   const location = useLocation();
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: '📊' },
-    { path: '/transactions', label: 'Transactions', icon: '💸' },
-    { path: '/accounts', label: 'Accounts', icon: '🏦' },
-    { path: '/fixed-deposits', label: 'Fixed Deposits', icon: '🔒' },
-    { path: '/interest', label: 'Interest Engine', icon: '📈' },
-    { path: '/reports', label: 'Reports', icon: '📋' },
-    { path: '/customers', label: 'Customers', icon: '👥' },
-    { path: '/agents', label: 'Agents', icon: '👔' },
-    { path: '/settings', label: 'Settings', icon: '⚙️' },
+    { path: '/', label: 'Dashboard' },
+    { path: '/transactions', label: 'Transactions' },
+    { path: '/accounts', label: 'Accounts' },
+    { path: '/fixed-deposits', label: 'Fixed Deposits' },
+    { path: '/interest', label: 'Interest Engine' },
+    { path: '/reports', label: 'Reports' },
+    { path: '/customers', label: 'Customers' },
+    { path: '/agents', label: 'Agents' },
+    { path: '/settings', label: 'Settings' },
   ];
 
   return (
     <nav className="sidebar">
-      <div className="sidebar-header">
-        <h2>MIMS</h2>
-        <p>Admin Portal</p>
-      </div>
       <ul className="sidebar-nav">
         {navItems.map((item) => (
           <li key={item.path} className={location.pathname === item.path ? 'active' : ''}>

@@ -1,37 +1,140 @@
-import React, { useState } from 'react';
-import { Search, Plus, Filter, MoreVertical, Edit2, Trash2, Eye } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Plus, Filter, MoreVertical, Eye, RefreshCw } from 'lucide-react';
 import './Customers.css';
-
-const MOCK_CUSTOMERS = [
-  { id: 'CUST-001', name: 'Nimal Perera', nic: '198512345678', phone: '071 234 5678', branch: 'Colombo Main', date: '10 Jan 2026', status: 'Active' },
-  { id: 'CUST-002', name: 'Kamal Silva', nic: '199012345678', phone: '077 987 6543', branch: 'Kandy', date: '15 Feb 2026', status: 'Active' },
-  { id: 'CUST-003', name: 'Saman Kumara', nic: '197512345678', phone: '075 456 7890', branch: 'Galle', date: '20 Mar 2026', status: 'Inactive' },
-  { id: 'CUST-004', name: 'Sunil Shantha', nic: '198212345678', phone: '072 345 6789', branch: 'Colombo Main', date: '05 Apr 2026', status: 'Active' },
-  { id: 'CUST-005', name: 'Amila Fernando', nic: '199512345678', phone: '078 123 4567', branch: 'Kandy', date: '12 May 2026', status: 'Active' },
-];
+import { getCustomers, createCustomer, getBranches, getAgents } from '../api';
 
 const Customers = () => {
+  const [customers, setCustomers] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [formSuccess, setFormSuccess] = useState(null);
+
+  const [formData, setFormData] = useState({
+    full_name: '',
+    national_id: '',
+    dob: '',
+    phone: '',
+    email: '',
+    branch_id: '',
+    agent_id: '',
+    customer_type: 'Individual'
+  });
+
+  useEffect(() => {
+    loadCustomers();
+    loadMetadata();
+  }, []);
+
+  const loadCustomers = async (searchTerm = '') => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await getCustomers(searchTerm);
+      setCustomers(res.data || []);
+    } catch (err) {
+      console.error('Error fetching customers:', err);
+      setError('Could not load customers from database.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMetadata = async () => {
+    try {
+      const [branchRes, agentRes] = await Promise.all([
+        getBranches(),
+        getAgents()
+      ]);
+      setBranches(branchRes.data || []);
+      setAgents(agentRes.data || []);
+      if (branchRes.data && branchRes.data.length > 0) {
+        setFormData(prev => ({ ...prev, branch_id: branchRes.data[0].branch_id }));
+      }
+      if (agentRes.data && agentRes.data.length > 0) {
+        setFormData(prev => ({ ...prev, agent_id: agentRes.data[0].agent_id }));
+      }
+    } catch (err) {
+      console.error('Error fetching metadata:', err);
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearch(val);
+    loadCustomers(val);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.full_name || !formData.national_id || !formData.dob || !formData.phone || !formData.branch_id || !formData.agent_id) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setError(null);
+      await createCustomer({
+        ...formData,
+        branch_id: parseInt(formData.branch_id),
+        agent_id: parseInt(formData.agent_id),
+      });
+      setFormSuccess('Customer registered successfully!');
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setFormSuccess(null);
+      }, 1000);
+      loadCustomers(search);
+    } catch (err) {
+      console.error('Error creating customer:', err);
+      alert(err.response?.data?.detail || 'Failed to register customer.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
           <h2>Customers</h2>
-          <p>Manage B-Trust microfinance customers</p>
+          <p>Manage B-Trust microfinance customers from database</p>
         </div>
         <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
           <Plus size={18} /> Register Customer
         </button>
       </div>
 
+      {error && (
+        <div className="card" style={{ backgroundColor: '#FEE2E2', color: '#991B1B', marginBottom: '1.5rem', padding: '1rem', borderRadius: '8px' }}>
+          {error}
+        </div>
+      )}
+
       <div className="card table-card">
         <div className="table-toolbar">
           <div className="search-bar">
             <Search size={18} className="text-muted" />
-            <input type="text" placeholder="Search customers by name, ID or NIC..." />
+            <input 
+              type="text" 
+              placeholder="Search customers by name, NIC or phone..." 
+              value={search}
+              onChange={handleSearchChange}
+            />
           </div>
-          <button className="btn-outline"><Filter size={18} /> Filter</button>
+          <button className="btn-outline" onClick={() => loadCustomers(search)}>
+            <RefreshCw size={18} /> Refresh
+          </button>
         </div>
 
         <div className="table-responsive">
@@ -43,45 +146,48 @@ const Customers = () => {
                 <th>NIC</th>
                 <th>Phone</th>
                 <th>Branch</th>
-                <th>Registered Date</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>Agent</th>
+                <th>DOB</th>
+                <th>Type</th>
               </tr>
             </thead>
             <tbody>
-              {MOCK_CUSTOMERS.map(cust => (
-                <tr key={cust.id}>
-                  <td className="font-medium">{cust.id}</td>
-                  <td>{cust.name}</td>
-                  <td>{cust.nic}</td>
-                  <td>{cust.phone}</td>
-                  <td>{cust.branch}</td>
-                  <td>{cust.date}</td>
-                  <td>
-                    <span className={`badge ${cust.status === 'Active' ? 'badge-success' : 'badge-warning'}`}>
-                      {cust.status}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="icon-btn text-blue-600"><Eye size={18}/></button>
-                      <button className="icon-btn text-slate-500"><Edit2 size={18}/></button>
-                      <button className="icon-btn text-red-600"><Trash2 size={18}/></button>
-                    </div>
+              {loading ? (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
+                    Loading customers from database...
                   </td>
                 </tr>
-              ))}
+              ) : customers.length === 0 ? (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
+                    No customers found.
+                  </td>
+                </tr>
+              ) : (
+                customers.map(cust => (
+                  <tr key={cust.customer_id}>
+                    <td className="font-medium">CUST-{String(cust.customer_id).padStart(3, '0')}</td>
+                    <td>{cust.full_name}</td>
+                    <td>{cust.national_id}</td>
+                    <td>{cust.phone}</td>
+                    <td>{cust.branch_name || `Branch #${cust.branch_id}`}</td>
+                    <td>{cust.agent_name || `Agent #${cust.agent_id}`}</td>
+                    <td>{cust.dob}</td>
+                    <td>
+                      <span className={`badge ${cust.customer_type === 'Individual' ? 'badge-success' : 'badge-warning'}`}>
+                        {cust.customer_type || 'Individual'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
         
         <div className="pagination">
-          <span>Showing 1 to 5 of 5 entries</span>
-          <div className="page-controls">
-            <button disabled>Prev</button>
-            <button className="active">1</button>
-            <button disabled>Next</button>
-          </div>
+          <span>Showing {customers.length} entries</span>
         </div>
       </div>
 
@@ -92,53 +198,106 @@ const Customers = () => {
               <h3>Register New Customer</h3>
               <button className="close-btn" onClick={() => setIsModalOpen(false)}>×</button>
             </div>
-            <div className="modal-body">
-              <form className="form-grid">
-                <div className="form-group col-span-2">
-                  <label>Full Name</label>
-                  <input type="text" placeholder="e.g. John Doe" />
+            {formSuccess && (
+              <div style={{ backgroundColor: '#D1FAE5', color: '#065F46', padding: '0.75rem', margin: '1rem', borderRadius: '6px' }}>
+                {formSuccess}
+              </div>
+            )}
+            <form onSubmit={handleSubmit}>
+              <div className="modal-body">
+                <div className="form-grid">
+                  <div className="form-group col-span-2">
+                    <label>Full Name *</label>
+                    <input 
+                      type="text" 
+                      name="full_name"
+                      required
+                      placeholder="e.g. Nimal Perera" 
+                      value={formData.full_name}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>NIC Number *</label>
+                    <input 
+                      type="text" 
+                      name="national_id"
+                      required
+                      placeholder="e.g. 199012345678" 
+                      value={formData.national_id}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Date of Birth *</label>
+                    <input 
+                      type="date" 
+                      name="dob"
+                      required
+                      value={formData.dob}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Phone Number *</label>
+                    <input 
+                      type="text" 
+                      name="phone"
+                      required
+                      placeholder="e.g. 071 234 5678" 
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Email (Optional)</label>
+                    <input 
+                      type="email" 
+                      name="email"
+                      placeholder="e.g. nimal@example.com" 
+                      value={formData.email}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Branch *</label>
+                    <select 
+                      name="branch_id"
+                      value={formData.branch_id}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      {branches.map(b => (
+                        <option key={b.branch_id} value={b.branch_id}>
+                          {b.branch_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Assigned Agent *</label>
+                    <select 
+                      name="agent_id"
+                      value={formData.agent_id}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      {agents.map(a => (
+                        <option key={a.agent_id} value={a.agent_id}>
+                          {a.agent_name} ({a.branch_name || 'Agent'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>NIC Number</label>
-                  <input type="text" placeholder="e.g. 199012345678" />
-                </div>
-                <div className="form-group">
-                  <label>Date of Birth</label>
-                  <input type="date" />
-                </div>
-                <div className="form-group col-span-2">
-                  <label>Address</label>
-                  <input type="text" placeholder="e.g. 123 Main St, Colombo" />
-                </div>
-                <div className="form-group">
-                  <label>Phone Number</label>
-                  <input type="text" placeholder="e.g. 071 234 5678" />
-                </div>
-                <div className="form-group">
-                  <label>Email (Optional)</label>
-                  <input type="email" placeholder="e.g. john@example.com" />
-                </div>
-                <div className="form-group">
-                  <label>Branch</label>
-                  <select>
-                    <option>Colombo Main</option>
-                    <option>Kandy</option>
-                    <option>Galle</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Assigned Agent</label>
-                  <select>
-                    <option>Agent 001 - Silva</option>
-                    <option>Agent 002 - Perera</option>
-                  </select>
-                </div>
-              </form>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-outline" onClick={() => setIsModalOpen(false)}>Cancel</button>
-              <button className="btn-primary" onClick={() => setIsModalOpen(false)}>Save Customer</button>
-            </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn-outline" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                <button type="submit" className="btn-primary" disabled={submitting}>
+                  {submitting ? 'Saving...' : 'Save Customer'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
