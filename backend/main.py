@@ -21,14 +21,15 @@ app.add_middleware(
 
 # Register routers — every endpoint is protected by HTTP Basic Auth
 _auth = [Depends(get_current_user)]
-app.include_router(transactions.router,   prefix="/api", dependencies=_auth)
-app.include_router(accounts.router,       prefix="/api", dependencies=_auth)
+app.include_router(transactions.router,   dependencies=_auth)
+app.include_router(accounts.router,       dependencies=_auth)
+app.include_router(dashboard.router,      dependencies=_auth)
+
 app.include_router(fixed_deposit.router,  prefix="/api", dependencies=_auth)
 app.include_router(report.router,         prefix="/api", dependencies=_auth)
 app.include_router(branches.router,       prefix="/api", dependencies=_auth)
 app.include_router(agents.router,         prefix="/api", dependencies=_auth)
 app.include_router(customers.router,      prefix="/api", dependencies=_auth)
-app.include_router(dashboard.router,      prefix="/api", dependencies=_auth)
 
 @app.get("/health")
 def health_check(db=Depends(get_db)):

@@ -36,9 +36,11 @@
 }
 
 .welcome-banner h1 span {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--color-charcoal-900);
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #000000;
+  display: inline-block;
+  letter-spacing: -0.02em;
 }
 
 .welcome-banner p {

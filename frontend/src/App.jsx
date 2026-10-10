@@ -27,6 +27,10 @@ const Sidebar = () => {
 
   return (
     <nav className="sidebar">
+      <div className="sidebar-header">
+        <h2><span style={{ fontSize: '1.2em', marginRight: '8px' }}>🏦</span>B-Trust</h2>
+        <p>Admin Portal</p>
+      </div>
       <ul className="sidebar-nav">
         {navItems.map((item) => (
           <li key={item.path} className={location.pathname === item.path ? 'active' : ''}>
