@@ -1,45 +1,92 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Play, CheckCircle2, AlertTriangle, FileText, Clock, RefreshCw } from 'lucide-react';
 import './InterestManagement.css';
+import { runInterestEngine, getMonthlyInterestDistribution, getActiveFDsReport } from '../api';
 
 const InterestManagement = () => {
   const [isRunning, setIsRunning] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [showResults, setShowResults] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-
-  const handleRunEngine = () => {
-    setShowConfirmModal(false);
-    setIsRunning(true);
-    setProgress(0);
-    setShowResults(false);
-  };
+  const [distributions, setDistributions] = useState([]);
+  const [activeFDs, setActiveFDs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [runDate, setRunDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [executionMessage, setExecutionMessage] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (isRunning) {
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setIsRunning(false);
-            setShowResults(true);
-            return 100;
-          }
-          return prev + 5;
-        });
-      }, 100);
-      return () => clearInterval(interval);
+    loadEngineData();
+  }, []);
+
+  const loadEngineData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [distRes, fdsRes] = await Promise.all([
+        getMonthlyInterestDistribution(),
+        getActiveFDsReport()
+      ]);
+      setDistributions(distRes.data || []);
+      setActiveFDs(fdsRes.data || []);
+    } catch (err) {
+      console.error('Failed to load interest data:', err);
+      setError('Failed to fetch interest audit records from database.');
+    } finally {
+      setLoading(false);
     }
-  }, [isRunning]);
+  };
+
+  const handleRunEngine = async () => {
+    setShowConfirmModal(false);
+    setIsRunning(true);
+    setError(null);
+    setExecutionMessage(null);
+
+    try {
+      const res = await runInterestEngine(runDate, 1);
+      setExecutionMessage(res.data?.message || 'Monthly interest engine executed successfully.');
+      await loadEngineData();
+    } catch (err) {
+      console.error('Error running interest engine:', err);
+      setError(err.response?.data?.detail || 'Engine execution failed.');
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const formatCurrency = (val) => {
+    return 'Rs. ' + Number(val || 0).toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const totalEstInterest = activeFDs.reduce((acc, fd) => {
+    const p = parseFloat(fd.principal_amount || 0);
+    const r = parseFloat(fd.interest_rate || 0) / 100;
+    return acc + (p * r / 12);
+  }, 0);
 
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
           <h2>Interest Management</h2>
-          <p>Automated Monthly Interest Engine</p>
+          <p>Automated Monthly Interest Engine (stored procedure sp_RunMonthlyEngine)</p>
         </div>
+        <button className="btn-outline" onClick={loadEngineData}>
+          <RefreshCw size={18} /> Refresh Records
+        </button>
       </div>
+
+      {error && (
+        <div className="card" style={{ backgroundColor: '#FEE2E2', color: '#991B1B', marginBottom: '1.5rem', padding: '1rem', borderRadius: '8px' }}>
+          {error}
+        </div>
+      )}
+
+      {executionMessage && (
+        <div className="card" style={{ backgroundColor: '#D1FAE5', color: '#065F46', marginBottom: '1.5rem', padding: '1rem', borderRadius: '8px' }}>
+          <CheckCircle2 size={18} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom' }} />
+          {executionMessage}
+        </div>
+      )}
 
       <div className="engine-card card">
         <div className="engine-header">
@@ -54,135 +101,112 @@ const InterestManagement = () => {
 
         <div className="engine-stats">
           <div className="stat-item">
-            <span className="label"><Clock size={16}/> Last Execution</span>
-            <span className="value">30 Jun 2026 23:59 PM</span>
+            <span className="label"><FileText size={16}/> Active FDs</span>
+            <span className="value">{loading ? '...' : `${activeFDs.length} FDs`}</span>
           </div>
           <div className="stat-item">
-            <span className="label"><RefreshCw size={16}/> Next Scheduled</span>
-            <span className="value">30 Jul 2026 23:59 PM</span>
+            <span className="label"><Clock size={16}/> Total Interest History</span>
+            <span className="value">{loading ? '...' : `${distributions.length} Postings`}</span>
           </div>
           <div className="stat-item">
-            <span className="label"><FileText size={16}/> Eligible Accounts</span>
-            <span className="value">845 FDs</span>
-          </div>
-          <div className="stat-item">
-            <span className="label">Total Est. Interest</span>
-            <span className="value text-green-600 font-bold">Rs. 1,245,600.00</span>
+            <span className="label">Est. Monthly Payout</span>
+            <span className="value text-green-600 font-bold">{loading ? '...' : formatCurrency(totalEstInterest)}</span>
           </div>
         </div>
 
-        {isRunning ? (
-          <div className="engine-progress">
-            <div className="progress-text">
-              <span>Processing Accounts...</span>
-              <span>{progress}%</span>
-            </div>
-            <div className="progress-bar-bg">
-              <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
-            </div>
+        <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <div>
+            <label style={{ fontSize: '0.85rem', color: '#64748B', display: 'block', marginBottom: '4px' }}>Processing Run Date</label>
+            <input 
+              type="date" 
+              value={runDate} 
+              onChange={(e) => setRunDate(e.target.value)}
+              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+            />
           </div>
-        ) : (
           <button 
             className="btn-primary run-engine-btn" 
             onClick={() => setShowConfirmModal(true)}
-            disabled={showResults}
+            disabled={isRunning}
+            style={{ marginTop: 'auto' }}
           >
-            <Play size={20} /> Run Monthly Interest Engine
+            <Play size={20} /> {isRunning ? 'Running Engine in DB...' : 'Run Monthly Interest Engine'}
           </button>
-        )}
+        </div>
       </div>
 
-      {showResults && (
-        <div className="results-card card fade-in">
-          <div className="card-header">
-            <h3>Execution Results</h3>
-            <span className="badge badge-success"><CheckCircle2 size={14}/> Completed Successfully</span>
-          </div>
-          
-          <div className="summary-grid">
-            <div className="summary-box">
-              <h4>Accounts Processed</h4>
-              <span>845</span>
-            </div>
-            <div className="summary-box success">
-              <h4>Interest Credited</h4>
-              <span>Rs. 1,245,600.00</span>
-            </div>
-            <div className="summary-box warning">
-              <h4>Accounts Skipped</h4>
-              <span>2</span>
-            </div>
-            <div className="summary-box error">
-              <h4>Errors</h4>
-              <span>0</span>
-            </div>
-          </div>
-
-          <h4 className="mt-6 mb-4 font-medium">Interest Posting Audit Log</h4>
-          <div className="table-responsive">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Audit ID</th>
-                  <th>Fixed Deposit ID</th>
-                  <th>Savings Account</th>
-                  <th>Customer</th>
-                  <th>Interest Posted</th>
-                  <th>Timestamp</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="text-muted">AUD-10024</td>
-                  <td>FD-9982</td>
-                  <td>SV-49321</td>
-                  <td>Nimal Perera</td>
-                  <td className="text-green-600 font-medium">+ Rs. 1,450.00</td>
-                  <td>30 Jul 2026 10:45:01 AM</td>
-                </tr>
-                <tr>
-                  <td className="text-muted">AUD-10025</td>
-                  <td>FD-9983</td>
-                  <td>SV-78310</td>
-                  <td>Kamal Silva</td>
-                  <td className="text-green-600 font-medium">+ Rs. 5,200.00</td>
-                  <td>30 Jul 2026 10:45:01 AM</td>
-                </tr>
-                <tr>
-                  <td className="text-muted">AUD-10026</td>
-                  <td>FD-9984</td>
-                  <td>SV-23094</td>
-                  <td>Saman Kumara</td>
-                  <td className="text-green-600 font-medium">+ Rs. 12,000.00</td>
-                  <td>30 Jul 2026 10:45:02 AM</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+      <div className="results-card card mt-6">
+        <div className="card-header">
+          <h3>Interest Distribution Audit History ({distributions.length})</h3>
         </div>
-      )}
+
+        <div className="table-responsive">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Year / Month</th>
+                <th>FD ID</th>
+                <th>Account No</th>
+                <th>Customer Name</th>
+                <th>FD Plan</th>
+                <th>Credits Count</th>
+                <th>Total Interest Credited</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
+                    Loading audit records...
+                  </td>
+                </tr>
+              ) : distributions.length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
+                    No interest distribution history found in database.
+                  </td>
+                </tr>
+              ) : (
+                distributions.map((item, idx) => (
+                  <tr key={idx}>
+                    <td className="font-medium">{item.year} - {String(item.month).padStart(2, '0')}</td>
+                    <td>FD-{String(item.fd_id).padStart(4, '0')}</td>
+                    <td>{item.account_number}</td>
+                    <td>{item.customer_name}</td>
+                    <td><span className="badge badge-outline">{item.plan_name}</span></td>
+                    <td>{item.number_of_interest_credits}</td>
+                    <td className="text-green-600 font-medium">
+                      + {formatCurrency(item.total_interest_credited)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>Confirm Manual Execution</h3>
+              <h3>Confirm Interest Engine Execution</h3>
               <button className="close-btn" onClick={() => setShowConfirmModal(false)}>×</button>
             </div>
             <div className="modal-body">
-              <div className="alert-box warning mb-4 flex gap-2">
+              <div className="alert-box warning mb-4 flex gap-2" style={{ padding: '0.75rem', backgroundColor: '#FEF3C7', color: '#92400E', borderRadius: '6px' }}>
                 <AlertTriangle size={24} className="shrink-0" />
                 <div>
-                  <strong>Warning:</strong> You are about to manually trigger the Monthly Interest Engine. 
-                  This operation cannot be reversed once completed. It will process all eligible fixed deposits and credit interest to their linked savings accounts.
+                  <strong>Notice:</strong> This executes `sp_RunMonthlyEngine` in MySQL for date <strong>{runDate}</strong>.
+                  It computes interest for active FDs and inserts `FD_Interest` credit transactions into the linked savings accounts.
                 </div>
               </div>
-              <p>Are you sure you want to proceed?</p>
+              <p>Execute monthly interest engine now?</p>
             </div>
             <div className="modal-footer">
               <button className="btn-outline" onClick={() => setShowConfirmModal(false)}>Cancel</button>
-              <button className="btn-primary" onClick={handleRunEngine}>Yes, Run Engine</button>
+              <button className="btn-primary" onClick={handleRunEngine}>Yes, Execute Engine</button>
             </div>
           </div>
         </div>
