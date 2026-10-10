@@ -1,22 +1,19 @@
 from pydantic import BaseModel
 from typing import Optional
+from datetime import date
 
 class CustomerBase(BaseModel):
-    branch_id: int
-    agent_id: Optional[int] = None
-    name: str
-    nic: str
+    full_name: str
+    national_id: str
+    dob: date
     phone: str
     email: Optional[str] = None
-    address: str
+    branch_id: int
+    agent_id: int
+    customer_type: str = 'Individual'
 
 class CustomerCreate(CustomerBase):
     pass
-
-class CustomerUpdate(BaseModel):
-    # Based on the spec, update customer is for (phone, email)
-    phone: Optional[str] = None
-    email: Optional[str] = None
 
 class Customer(CustomerBase):
     customer_id: int
