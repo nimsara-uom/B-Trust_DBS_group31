@@ -1,1 +1,3 @@
-# Raw DB query functions for branches
+def get_branches(cursor):
+    cursor.execute("SELECT * FROM BRANCH")
+    return cursor.fetchall()
