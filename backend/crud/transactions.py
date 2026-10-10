@@ -39,7 +39,7 @@ def get_transaction_by_id(cursor, transaction_id: int):
             transaction_type,
             amount,
             transaction_timestamp
-        FROM bank_transaction
+        FROM BANK_TRANSACTION
         WHERE transaction_id = %s
         """,
         (transaction_id,)
@@ -71,7 +71,7 @@ def get_transactions(
             transaction_type,
             amount,
             transaction_timestamp
-        FROM bank_transaction
+        FROM BANK_TRANSACTION
         WHERE 1 = 1
     """
     params = []
