@@ -82,43 +82,81 @@ def get_fixed_deposit_by_account(cursor, account_id):
 
 #create new fd
 def create_fixed_deposit(cursor, data):
-
-    #check if an FD already exists for the account
+    # 1. Fetch savings account details and minimum balance requirement
     cursor.execute(
         """
-        select fd_id
-        from FIXEDDEPOSIT
-        where account_id = %s
-            and status = 'Active' """, (data.account_id,)
+        SELECT 
+            sa.account_id,
+            sa.status,
+            sa.current_balance,
+            sp.minimum_balance
+        FROM SAVINGSACCOUNT sa
+        JOIN SAVINGSPLAN sp ON sa.plan_id = sp.plan_id
+        WHERE sa.account_id = %s
+        FOR UPDATE
+        """,
+        (data.account_id,)
+    )
+    account = cursor.fetchone()
+
+    if not account:
+        raise ValueError("Savings account not found.")
+
+    if account["status"] != "Active":
+        raise ValueError(f"Savings account is not active (current status: {account['status']}).")
+
+    current_balance = account["current_balance"]
+    minimum_balance = account["minimum_balance"]
+
+    # 2. Check that the account has sufficient funds
+    if (current_balance - data.principal_amount) < minimum_balance:
+        raise ValueError(
+            f"Insufficient funds in savings account. "
+            f"Available balance is Rs. {current_balance:,.2f}, and maintaining minimum required balance "
+            f"of Rs. {minimum_balance:,.2f} leaves insufficient funds for principal amount Rs. {data.principal_amount:,.2f}."
+        )
+
+    # 3. Check if an active FD already exists for the account
+    cursor.execute(
+        """
+        SELECT fd_id
+        FROM FIXEDDEPOSIT
+        WHERE account_id = %s
+          AND status = 'Active'
+        """,
+        (data.account_id,)
     )
 
     exist_fd = cursor.fetchone()
 
     if exist_fd:
-        raise ValueError("Savings account already has a fixed deposit")
+        raise ValueError("Savings account already has an active fixed deposit.")
 
-    #get paln duration
+    # 4. Get plan duration
     cursor.execute(
         """
-        select term_months
-        from FDPLAN
-        where fd_plan_id = %s """,(data.fd_plan_id,)
+        SELECT term_months
+        FROM FDPLAN
+        WHERE fd_plan_id = %s
+        """,
+        (data.fd_plan_id,)
     )
 
     plan = cursor.fetchone()
 
     if plan is None:
-        raise ValueError("Invalid FD plan")
+        raise ValueError("Invalid FD plan selected.")
 
     term_months = plan["term_months"]
 
     # Calculate dates
     start_date = date.today()
-    maturity_date = start_date + relativedelta(months = term_months)
+    maturity_date = start_date + relativedelta(months=term_months)
     next_interest_date = start_date + relativedelta(months=1)
 
+    # 5. Insert new Fixed Deposit record
     query = """
-        insert into FIXEDDEPOSIT
+        INSERT INTO FIXEDDEPOSIT
         (
             account_id,
             fd_plan_id,
@@ -140,7 +178,68 @@ def create_fixed_deposit(cursor, data):
         next_interest_date
     ))
 
-    return cursor.lastrowid
+    fd_id = cursor.lastrowid
+
+    # 6. Find agent assigned to customer of this account (or system fallback agent 1)
+    cursor.execute(
+        """
+        SELECT c.agent_id
+        FROM ACCOUNTHOLDER ah
+        JOIN CUSTOMER c ON ah.customer_id = c.customer_id
+        WHERE ah.account_id = %s
+        LIMIT 1
+        """,
+        (data.account_id,)
+    )
+    holder = cursor.fetchone()
+    agent_id = holder["agent_id"] if (holder and holder.get("agent_id")) else 1
+
+    # 7. Generate a unique transaction reference for the transfer
+    ref_no = f"TXN-FD-{fd_id}-{data.account_id}"
+
+    # 8. Record the withdrawal / transfer transaction in BANK_TRANSACTION
+    # Note: If database trigger trg_update_balance exists, it automatically deducts
+    # current_balance on Withdrawal. To support environments with or without the trigger,
+    # we verify whether balance was automatically deducted.
+    cursor.execute(
+        """
+        INSERT INTO BANK_TRANSACTION (
+            account_id,
+            agent_id,
+            fd_id,
+            reference_no,
+            transaction_type,
+            amount,
+            transaction_timestamp
+        ) VALUES (%s, %s, %s, %s, 'Withdrawal', %s, NOW())
+        """,
+        (
+            data.account_id,
+            agent_id,
+            fd_id,
+            ref_no,
+            data.principal_amount
+        )
+    )
+
+    # 9. Verify and ensure account balance is accurately reduced: new_balance = old_balance - principal
+    cursor.execute(
+        "SELECT current_balance FROM SAVINGSACCOUNT WHERE account_id = %s",
+        (data.account_id,)
+    )
+    updated_acc = cursor.fetchone()
+    if updated_acc and updated_acc["current_balance"] == current_balance:
+        # Trigger didn't update the balance; explicitly deduct
+        cursor.execute(
+            """
+            UPDATE SAVINGSACCOUNT
+            SET current_balance = current_balance - %s
+            WHERE account_id = %s
+            """,
+            (data.principal_amount, data.account_id)
+        )
+
+    return fd_id
 
 #run procedure for monthly fd interest
 def run_monthly_engine(cursor, p_RunDate, p_SystemAgentID):

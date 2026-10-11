@@ -104,13 +104,13 @@ const FixedDeposits = () => {
         fd_plan_id: parseInt(selectedPlanId),
         principal_amount: principal
       });
-      setFormSuccess('Fixed deposit created successfully!');
+      setFormSuccess('Fixed deposit created successfully! Funds transferred from savings account.');
       setTimeout(() => {
         setIsModalOpen(false);
         setFormSuccess(null);
         setPrincipalAmount('');
         setSelectedAccountId('');
-      }, 1000);
+      }, 1200);
       loadData();
     } catch (err) {
       console.error('Error creating FD:', err);
