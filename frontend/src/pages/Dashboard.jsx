@@ -29,7 +29,8 @@ const Dashboard = () => {
       setStats(res.data);
     } catch (err) {
       console.error('Failed to fetch dashboard stats:', err);
-      setError('Failed to connect to backend server. Make sure FastAPI is running.');
+      const message = err.response?.data?.detail || err.message || 'Failed to connect to backend server. Make sure FastAPI is running.';
+      setError(message);
     } finally {
       setLoading(false);
     }

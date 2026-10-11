@@ -56,7 +56,8 @@ const Accounts = () => {
       }
     } catch (err) {
       console.error('Failed to load accounts data:', err);
-      setError('Failed to connect to backend server or database.');
+      const message = err.response?.data?.detail || err.message || 'Failed to connect to backend server or database.';
+      setError(message);
     } finally {
       setLoading(false);
     }
