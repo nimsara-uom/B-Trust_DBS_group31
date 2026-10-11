@@ -31,7 +31,6 @@ const Agents = () => {
       <div className="page-header">
         <div>
           <h2>Agents Management</h2>
-          <p>Field banking agents and performance metrics from database</p>
         </div>
         <button className="btn-outline" onClick={loadAgents}>
           <RefreshCw size={18} /> Refresh

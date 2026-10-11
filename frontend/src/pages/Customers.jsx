@@ -108,7 +108,6 @@ const Customers = () => {
       <div className="page-header">
         <div>
           <h2>Customers</h2>
-          <p>Manage B-Trust microfinance customers from database</p>
         </div>
         <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
           <Plus size={18} /> Register Customer
@@ -125,9 +124,9 @@ const Customers = () => {
         <div className="table-toolbar">
           <div className="search-bar">
             <Search size={18} className="text-muted" />
-            <input 
-              type="text" 
-              placeholder="Search customers by name, NIC or phone..." 
+            <input
+              type="text"
+              placeholder="Search customers by name, NIC or phone..."
               value={search}
               onChange={handleSearchChange}
             />
@@ -185,7 +184,7 @@ const Customers = () => {
             </tbody>
           </table>
         </div>
-        
+
         <div className="pagination">
           <span>Showing {customers.length} entries</span>
         </div>
@@ -208,30 +207,30 @@ const Customers = () => {
                 <div className="form-grid">
                   <div className="form-group col-span-2">
                     <label>Full Name *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       name="full_name"
                       required
-                      placeholder="e.g. Nimal Perera" 
+                      placeholder="e.g. Nimal Perera"
                       value={formData.full_name}
                       onChange={handleInputChange}
                     />
                   </div>
                   <div className="form-group">
                     <label>NIC Number *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       name="national_id"
                       required
-                      placeholder="e.g. 199012345678" 
+                      placeholder="e.g. 199012345678"
                       value={formData.national_id}
                       onChange={handleInputChange}
                     />
                   </div>
                   <div className="form-group">
                     <label>Date of Birth *</label>
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       name="dob"
                       required
                       value={formData.dob}
@@ -240,28 +239,28 @@ const Customers = () => {
                   </div>
                   <div className="form-group">
                     <label>Phone Number *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       name="phone"
                       required
-                      placeholder="e.g. 071 234 5678" 
+                      placeholder="e.g. 071 234 5678"
                       value={formData.phone}
                       onChange={handleInputChange}
                     />
                   </div>
                   <div className="form-group">
                     <label>Email (Optional)</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       name="email"
-                      placeholder="e.g. nimal@example.com" 
+                      placeholder="e.g. nimal@example.com"
                       value={formData.email}
                       onChange={handleInputChange}
                     />
                   </div>
                   <div className="form-group">
                     <label>Branch *</label>
-                    <select 
+                    <select
                       name="branch_id"
                       value={formData.branch_id}
                       onChange={handleInputChange}
@@ -276,7 +275,7 @@ const Customers = () => {
                   </div>
                   <div className="form-group">
                     <label>Assigned Agent *</label>
-                    <select 
+                    <select
                       name="agent_id"
                       value={formData.agent_id}
                       onChange={handleInputChange}

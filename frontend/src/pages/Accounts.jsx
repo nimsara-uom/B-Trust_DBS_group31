@@ -235,7 +235,6 @@ const Accounts = () => {
       <div className="page-header">
         <div>
           <h2>Savings Accounts</h2>
-          <p>Manage customer savings and plans from database</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button className="btn-primary" onClick={handleOpenModal}>
@@ -259,8 +258,8 @@ const Accounts = () => {
             const Icon = PLAN_ICONS[plan.plan_name] || Wallet;
             const color = PLAN_COLORS[plan.plan_name] || 'blue';
             return (
-              <div 
-                key={plan.plan_id} 
+              <div
+                key={plan.plan_id}
                 className="plan-card"
               >
                 <div className="plan-card-top">
@@ -272,7 +271,7 @@ const Accounts = () => {
                     <span className="plan-rate">{plan.interest_rate}% p.a.</span>
                   </div>
                 </div>
-                
+
                 <div className="plan-card-bottom">
                   <div className="plan-min-bal">
                     <span>Min Balance: </span><strong>{formatCurrency(plan.minimum_balance)}</strong>
@@ -292,15 +291,15 @@ const Accounts = () => {
           <div className="toolbar-filters">
             <div className="search-bar">
               <Search size={18} className="text-muted" />
-              <input 
-                type="text" 
-                placeholder="Search by name, account no, or NIC..." 
+              <input
+                type="text"
+                placeholder="Search by name, account no, or NIC..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               {search && (
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="clear-search-btn"
                   onClick={() => setSearch('')}
                   title="Clear search text"
@@ -311,7 +310,7 @@ const Accounts = () => {
             </div>
 
             <div className="filter-group">
-              <select 
+              <select
                 className="filter-select"
                 value={planFilter}
                 onChange={(e) => setPlanFilter(e.target.value)}
@@ -325,7 +324,7 @@ const Accounts = () => {
                 ))}
               </select>
 
-              <select 
+              <select
                 className="filter-select"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -338,7 +337,7 @@ const Accounts = () => {
               </select>
 
               {hasActiveFilters && (
-                <button 
+                <button
                   type="button"
                   className="btn-reset-filters"
                   onClick={handleClearFilters}
@@ -383,8 +382,8 @@ const Accounts = () => {
                         <p style={{ margin: 0, fontSize: '0.95rem' }}>
                           No savings accounts found matching your search and filter criteria.
                         </p>
-                        <button 
-                          className="btn-outline" 
+                        <button
+                          className="btn-outline"
                           style={{ marginTop: '0.75rem', display: 'inline-flex', padding: '6px 14px' }}
                           onClick={handleClearFilters}
                         >
@@ -471,8 +470,8 @@ const Accounts = () => {
                         <div className="customer-search-results-popover">
                           <div className="customer-search-popover-header">
                             <span>
-                              {custSearchQuery 
-                                ? `Matching Customers (${filteredModalCustomers.length})` 
+                              {custSearchQuery
+                                ? `Matching Customers (${filteredModalCustomers.length})`
                                 : `Customers List (${filteredModalCustomers.length})`}
                             </span>
                             <span className="search-popover-hint">Click a customer to select</span>
@@ -540,14 +539,14 @@ const Accounts = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Savings Plan Selection */}
                   <div className="form-group col-span-2">
                     <label>Select Savings Plan *</label>
                     <div className="plan-selector">
                       {plans.map(plan => (
-                        <div 
-                          key={plan.plan_id} 
+                        <div
+                          key={plan.plan_id}
                           className={`plan-option ${Number(selectedPlanId) === plan.plan_id ? 'selected' : ''}`}
                           onClick={() => handlePlanSelect(plan)}
                           style={{ cursor: 'pointer' }}
@@ -570,11 +569,11 @@ const Accounts = () => {
                         </span>
                       )}
                     </div>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       step="0.01"
                       min={minRequiredBalance}
-                      placeholder={selectedPlan ? `Minimum ${minRequiredBalance}` : 'Select a plan first'} 
+                      placeholder={selectedPlan ? `Minimum ${minRequiredBalance}` : 'Select a plan first'}
                       value={initialDeposit}
                       onChange={handleDepositChange}
                       onBlur={handleDepositBlur}
