@@ -17,3 +17,13 @@ def get_agents(cursor):
     """
     cursor.execute(query)
     return cursor.fetchall()
+
+def create_agent(cursor, conn, agent_name: str, branch_id: int, phone: str):
+    query = """
+    INSERT INTO AGENT (agent_name, branch_id, phone)
+    VALUES (%s, %s, %s)
+    """
+    cursor.execute(query, (agent_name, branch_id, phone))
+    conn.commit()
+    return cursor.lastrowid
+
