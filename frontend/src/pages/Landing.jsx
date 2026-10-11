@@ -43,24 +43,14 @@ const Landing = () => {
       {/* Top Navbar */}
       <header className="landing-navbar">
         <div className="nav-brand">
-          <div className="nav-logo-icon">🏦</div>
+          <div className="nav-logo-icon">🏦︎︎︎</div>
           <div className="nav-brand-text">
             <h2>B-Trust</h2>
             <p>Microbanking & Interest Management System</p>
           </div>
         </div>
 
-        <nav className="nav-actions">
-          {isAuthenticated ? (
-            <button className="btn-portal" onClick={() => navigate('/dashboard')}>
-              Go to Dashboard →
-            </button>
-          ) : (
-            <button className="btn-login-trigger" onClick={() => setShowLoginModal(true)}>
-              Sign In to Portal
-            </button>
-          )}
-        </nav>
+
       </header>
 
       {/* Main Full-Window Hero Layout */}
@@ -73,41 +63,25 @@ const Landing = () => {
         <div className="hero-split-grid">
           {/* Left Column: Brand & Action */}
           <div className="hero-left-col">
-            <div className="hero-brand-card-badge">
-              <div className="brand-logo-gem">
-                <span className="gem-icon">🏦</span>
-              </div>
-              <div className="brand-meta">
-                <div className="brand-title-row">
-                  <span className="brand-main-name">B-Trust</span>
-                  <span className="brand-verified-pill">Official Portal</span>
-                </div>
-                <span className="brand-sub-tag">Microbanking & Interest Management System</span>
-              </div>
-            </div>
+
 
             <h1 className="hero-main-title">
               Smarter Banking.<br />
-              <span className="hero-gradient-headline">Greater Trust.</span>
+              <span className="hero-gradient-headline">Greater Trust.</span><br />
             </h1>
 
             <p className="hero-main-desc">
-              Experience the next generation of banking operations with <strong className="brand-inline-highlight">B-Trust</strong>. Track customers,
-              monitor balances, handle instant transactions, and ensure secure, transparent
-              financial services — all in one modern platform.
+              Experience the next generation of banking operations with <br /> <strong className="brand-inline-highlight">B-Trust</strong>.<br />
             </p>
 
             <div className="hero-cta-group">
               <button className="hero-primary-btn" onClick={handleActionClick}>
-                <span className="btn-icon-symbol">🗂️</span>
+                <span className="btn-icon-symbol">📂︎</span>
                 <span>Go to Dashboard</span>
                 <span className="btn-arrow-symbol">→</span>
               </button>
 
-              <div className="cta-support-tag">
-                <span className="tag-check">✓</span>
-                <span>Protected Financial Ledger</span>
-              </div>
+
             </div>
 
             {/* Micro Feature Quick Counters */}
@@ -151,9 +125,9 @@ const Landing = () => {
 
               {/* The Cropped 3D Stage Image Filling the Right Section */}
               <div className="stage-image-container">
-                <img 
-                  src={hero3dScene} 
-                  alt="B-Trust Microbanking 3D Platform" 
+                <img
+                  src={hero3dScene}
+                  alt="B-Trust Microbanking 3D Platform"
                   className="hero-large-3d-img"
                 />
               </div>
@@ -167,9 +141,8 @@ const Landing = () => {
         <div className="auth-modal-backdrop" onClick={() => setShowLoginModal(false)}>
           <div className="auth-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <div className="modal-logo">🏦</div>
+              <div className="modal-logo">🏦︎︎︎</div>
               <h3>Sign In to B-Trust</h3>
-              <p>Enter your management credentials to access the banking portal</p>
             </div>
 
             {error && <div className="modal-error-alert">{error}</div>}
@@ -177,9 +150,9 @@ const Landing = () => {
             <form onSubmit={handleLoginSubmit} className="auth-form">
               <div className="form-group">
                 <label>Email Address / Username</label>
-                <input 
-                  type="text" 
-                  value={emailOrUsername} 
+                <input
+                  type="text"
+                  value={emailOrUsername}
                   onChange={(e) => setEmailOrUsername(e.target.value)}
                   placeholder="admin@btrust.com or admin"
                   required
@@ -189,29 +162,27 @@ const Landing = () => {
 
               <div className="form-group">
                 <label>Password</label>
-                <input 
-                  type="password" 
-                  value={password} 
+                <input
+                  type="password"
+                  value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
                 />
               </div>
 
-              <div className="demo-credentials-hint">
-                <span>Sign in with <strong>admin@btrust.com</strong> (or <strong>admin</strong>) / password: <strong>admin</strong></span>
-              </div>
+
 
               <div className="modal-actions">
-                <button 
-                  type="button" 
-                  className="btn-cancel" 
+                <button
+                  type="button"
+                  className="btn-cancel"
                   onClick={() => setShowLoginModal(false)}
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn-submit"
                   disabled={loading}
                 >

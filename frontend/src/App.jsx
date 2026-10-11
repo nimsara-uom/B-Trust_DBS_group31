@@ -40,7 +40,7 @@ const Sidebar = () => {
     <nav className="sidebar">
       <div className="sidebar-header">
         <Link to="/" style={{ textDecoration: 'none' }}>
-          <h2><span style={{ fontSize: '1.2em', marginRight: '8px' }}>🏦</span>B-Trust</h2>
+          <h2><span style={{ fontSize: '1.2em', marginRight: '8px' }}>🏦︎</span>B-Trust</h2>
           <p>Admin Portal</p>
         </Link>
       </div>

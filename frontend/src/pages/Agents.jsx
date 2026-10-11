@@ -79,8 +79,8 @@ const Agents = () => {
                     <td className="font-medium">{agent.agent_name}</td>
                     <td>{agent.branch_name || `Branch #${agent.branch_id}`}</td>
                     <td>{agent.phone}</td>
-                    <td>{agent.total_customers} Customers</td>
-                    <td>{agent.total_transactions} Transactions</td>
+                    <td>{agent.total_customers ?? 0} Customers</td>
+                    <td>{agent.total_transactions ?? 0} Transactions</td>
                   </tr>
                 ))
               )}
