@@ -98,35 +98,72 @@ def get_plan_by_id(cursor, plan_id: int) -> Optional[Dict[str, Any]]:
 def get_accounts(
     cursor,
     account_status: Optional[str] = None,
-    plan_id: Optional[int] = None
+    plan_id: Optional[int] = None,
+    plan_name: Optional[str] = None,
+    search: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
     List savings accounts with optional filters:
         - status: 'Active', 'Inactive', 'Closed'
-        - plan_id: specific savings plan
+        - plan_id: specific savings plan ID
+        - plan_name: specific savings plan name
+        - search: keyword matching customer name, account number, or NIC
     """
     query = """
         SELECT 
             sa.account_id,
             sa.plan_id,
             sp.plan_name,
+            sp.interest_rate,
             sa.account_number,
             sa.opened_date,
             sa.status,
-            sa.current_balance
+            sa.current_balance,
+            GROUP_CONCAT(c.full_name ORDER BY ah.customer_id SEPARATOR ', ') AS customer_name,
+            SUBSTRING_INDEX(GROUP_CONCAT(c.full_name ORDER BY ah.customer_id SEPARATOR ', '), ', ', 1) AS primary_customer,
+            GROUP_CONCAT(c.national_id ORDER BY ah.customer_id SEPARATOR ', ') AS national_id
         FROM SAVINGSACCOUNT sa
         JOIN SAVINGSPLAN sp ON sa.plan_id = sp.plan_id
+        LEFT JOIN ACCOUNTHOLDER ah ON sa.account_id = ah.account_id
+        LEFT JOIN CUSTOMER c ON ah.customer_id = c.customer_id
         WHERE 1=1
     """
     params = []
 
-    if account_status:
+    if account_status and account_status != "All":
         query += " AND sa.status = %s"
         params.append(account_status)
 
     if plan_id is not None:
         query += " AND sa.plan_id = %s"
         params.append(plan_id)
+
+    if plan_name and plan_name != "All":
+        query += " AND sp.plan_name = %s"
+        params.append(plan_name)
+
+    query += """
+        GROUP BY 
+            sa.account_id,
+            sa.plan_id,
+            sp.plan_name,
+            sp.interest_rate,
+            sa.account_number,
+            sa.opened_date,
+            sa.status,
+            sa.current_balance
+    """
+
+    if search and search.strip():
+        query += """
+            HAVING (
+                sa.account_number LIKE %s 
+                OR customer_name LIKE %s
+                OR national_id LIKE %s
+            )
+        """
+        search_pattern = f"%{search.strip()}%"
+        params.extend([search_pattern, search_pattern, search_pattern])
 
     query += " ORDER BY sa.account_id DESC"
     cursor.execute(query, tuple(params))
@@ -175,6 +212,14 @@ def get_account_by_id(cursor, account_id: int) -> Optional[Dict[str, Any]]:
     """
     cursor.execute(holders_query, (account_id,))
     account["holders"] = cursor.fetchall()
+    if account["holders"]:
+        account["customer_name"] = ", ".join(h["full_name"] for h in account["holders"])
+        account["primary_customer"] = account["holders"][0]["full_name"]
+        account["national_id"] = ", ".join(h["national_id"] for h in account["holders"] if h.get("national_id"))
+    else:
+        account["customer_name"] = None
+        account["primary_customer"] = None
+        account["national_id"] = None
 
     return account
 

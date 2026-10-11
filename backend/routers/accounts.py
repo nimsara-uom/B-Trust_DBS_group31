@@ -83,16 +83,18 @@ def list_plans(db=Depends(get_db)):
     "/api/accounts",
     response_model=List[AccountResponse],
     summary="List all savings accounts",
-    description="Retrieve all savings accounts with optional filters by status (Active/Inactive/Closed) and plan_id."
+    description="Retrieve all savings accounts with optional filters by status (Active/Inactive/Closed), plan_id, plan name, and search (by name or account number)."
 )
 @router.get("/accounts", response_model=List[AccountResponse], include_in_schema=False)
 def list_accounts(
     status: Optional[str] = Query(None, description="Filter by status: Active, Inactive, Closed"),
     plan_id: Optional[int] = Query(None, description="Filter by plan ID"),
+    plan: Optional[str] = Query(None, description="Filter by plan name: Children, Teen, Adult, Senior, Joint"),
+    search: Optional[str] = Query(None, description="Search by account number, customer name, or NIC"),
     db=Depends(get_db)
 ):
     cursor = _get_cursor(db)
-    return crud_accounts.get_accounts(cursor, account_status=status, plan_id=plan_id)
+    return crud_accounts.get_accounts(cursor, account_status=status, plan_id=plan_id, plan_name=plan, search=search)
 
 
 # ---------------------------------------------------------------------------

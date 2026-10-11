@@ -108,6 +108,10 @@ class AccountResponse(BaseModel):
     opened_date: date
     status: str
     current_balance: Decimal
+    interest_rate: Optional[Decimal] = None
+    customer_name: Optional[str] = None
+    primary_customer: Optional[str] = None
+    national_id: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -117,8 +121,8 @@ class AccountResponse(BaseModel):
 # ---------------------------------------------------------------------------
 class AccountDetailResponse(AccountResponse):
     """Returned when retrieving single account details (GET /api/accounts/{account_id})."""
-    interest_rate: Optional[Decimal] = None
     minimum_balance: Optional[Decimal] = None
     holders: List[AccountHolderResponse] = []
 
     model_config = {"from_attributes": True}
+
