@@ -73,10 +73,17 @@ const Landing = () => {
         <div className="hero-split-grid">
           {/* Left Column: Brand & Action */}
           <div className="hero-left-col">
-            <div className="hero-pill-badge">
-              <span className="pill-dot"></span>
-              <span className="pill-icon">🏦</span>
-              <span className="pill-label">B-Trust Banking Platform</span>
+            <div className="hero-brand-card-badge">
+              <div className="brand-logo-gem">
+                <span className="gem-icon">🏦</span>
+              </div>
+              <div className="brand-meta">
+                <div className="brand-title-row">
+                  <span className="brand-main-name">B-Trust</span>
+                  <span className="brand-verified-pill">Official Portal</span>
+                </div>
+                <span className="brand-sub-tag">Microbanking & Interest Management System</span>
+              </div>
             </div>
 
             <h1 className="hero-main-title">
@@ -85,9 +92,9 @@ const Landing = () => {
             </h1>
 
             <p className="hero-main-desc">
-              Manage your microbanking operations with ease. Track customers,
-              monitor balances, handle transactions and ensure secure, transparent
-              financial services — all in one place.
+              Experience the next generation of banking operations with <strong className="brand-inline-highlight">B-Trust</strong>. Track customers,
+              monitor balances, handle instant transactions, and ensure secure, transparent
+              financial services — all in one modern platform.
             </p>
 
             <div className="hero-cta-group">
