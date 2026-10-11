@@ -6,6 +6,7 @@
 .text-purple-600 {
   color: #7C3AED;
 }
+
 .border-purple-200 {
   border-color: #E9D5FF;
 }
@@ -83,4 +84,215 @@
 
 .alert-box strong {
   font-weight: 600;
+}
+
+/* Account selection search in deposit & withdrawal modals */
+.account-search-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.account-search-bar {
+  display: flex;
+  position: relative;
+  align-items: center;
+}
+
+.account-search-bar .search-icon-modal {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #94a3b8;
+  z-index: 2;
+}
+
+.account-search-bar input {
+  width: 100% !important;
+  padding-left: 38px !important;
+  padding-right: 34px !important;
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 0.85rem !important;
+  background-color: var(--color-slate-50) !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+}
+
+.account-search-bar input:focus {
+  border-color: var(--color-primary) !important;
+  background-color: #fff !important;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1) !important;
+}
+
+.clear-search-btn-modal {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.clear-search-btn-modal:hover {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.account-search-results-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+  max-height: 240px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.account-search-popover-header {
+  padding: 8px 12px;
+  background-color: var(--color-slate-50);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.account-search-results-list {
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.account-search-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.account-search-result-item:hover {
+  background-color: #f8fafc;
+}
+
+.account-search-result-item.selected {
+  background-color: #eef2ff;
+  border-left: 3px solid var(--color-primary);
+}
+
+.account-search-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-search-item-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-search-item-acc {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: #EEF2FF;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.account-search-item-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-charcoal-900);
+}
+
+.account-search-item-sub {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-search-empty {
+  padding: 16px 14px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.selected-account-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  margin-top: 4px;
+}
+
+.selected-account-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #059669;
+  letter-spacing: 0.5px;
+}
+
+.selected-account-name {
+  font-size: 0.9rem;
+  color: var(--color-charcoal-900);
+}
+
+.selected-account-name strong {
+  color: var(--color-primary);
+}
+
+.selected-account-sub {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.btn-change-account {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-charcoal-900);
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-change-account:hover {
+  background: #fff;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }

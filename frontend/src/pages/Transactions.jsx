@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowUpRight, ArrowDownRight, RefreshCw, Filter, Search } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, RefreshCw, Filter, Search, Check, X } from 'lucide-react';
 import './Transactions.css';
 import { getTransactions, depositMoney, withdrawMoney, getAccounts, getAgents } from '../api';
 
@@ -19,6 +19,8 @@ const Transactions = () => {
   // Form states
   const [selectedAccountId, setSelectedAccountId] = useState('');
   const [selectedAgentId, setSelectedAgentId] = useState('');
+  const [accountSearchQuery, setAccountSearchQuery] = useState('');
+  const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [refNo, setRefNo] = useState('');
 
@@ -49,24 +51,26 @@ const Transactions = () => {
       ]);
       setAccounts(accRes.data || []);
       setAgents(agentRes.data || []);
-      if (accRes.data && accRes.data.length > 0) {
-        setSelectedAccountId(accRes.data[0].account_id);
-      }
-      if (agentRes.data && agentRes.data.length > 0) {
-        setSelectedAgentId(agentRes.data[0].agent_id);
-      }
     } catch (err) {
       console.error('Error loading metadata:', err);
     }
   };
 
   const openDeposit = () => {
+    setSelectedAccountId('');
+    setSelectedAgentId('');
+    setAccountSearchQuery('');
+    setIsAccountDropdownOpen(false);
     setAmount('');
     setRefNo(`DEP-${Date.now().toString().slice(-6)}`);
     setIsDepositModalOpen(true);
   };
 
   const openWithdrawal = () => {
+    setSelectedAccountId('');
+    setSelectedAgentId('');
+    setAccountSearchQuery('');
+    setIsAccountDropdownOpen(false);
     setAmount('');
     setRefNo(`WTH-${Date.now().toString().slice(-6)}`);
     setIsWithdrawModalOpen(true);
@@ -74,7 +78,7 @@ const Transactions = () => {
 
   const handleDeposit = async (e) => {
     e.preventDefault();
-    if (!selectedAccountId || !amount || !refNo) {
+    if (!selectedAccountId || !selectedAgentId || !amount || !refNo) {
       alert('Please fill in all fields.');
       return;
     }
@@ -83,7 +87,7 @@ const Transactions = () => {
       setSubmitting(true);
       await depositMoney({
         account_id: parseInt(selectedAccountId),
-        agent_id: parseInt(selectedAgentId || 1),
+        agent_id: parseInt(selectedAgentId),
         amount: parseFloat(amount),
         reference_no: refNo.trim()
       });
@@ -99,7 +103,7 @@ const Transactions = () => {
 
   const handleWithdraw = async (e) => {
     e.preventDefault();
-    if (!selectedAccountId || !amount || !refNo) {
+    if (!selectedAccountId || !selectedAgentId || !amount || !refNo) {
       alert('Please fill in all fields.');
       return;
     }
@@ -108,7 +112,7 @@ const Transactions = () => {
       setSubmitting(true);
       await withdrawMoney({
         account_id: parseInt(selectedAccountId),
-        agent_id: parseInt(selectedAgentId || 1),
+        agent_id: parseInt(selectedAgentId),
         amount: parseFloat(amount),
         reference_no: refNo.trim()
       });
@@ -141,7 +145,7 @@ const Transactions = () => {
     if (activeTab === 'Withdrawals' && txn.transaction_type !== 'Withdrawal') return false;
     if (activeTab === 'Interest' && txn.transaction_type !== 'FD_Interest') return false;
     if (activeTab === 'Fixed Deposits' && !txn.fd_id) return false;
-    
+
     if (search) {
       const q = search.toLowerCase();
       const ref = (txn.reference_no || '').toLowerCase();
@@ -152,12 +156,23 @@ const Transactions = () => {
     return true;
   });
 
+  // Filter accounts for modal selection
+  const filteredModalAccounts = accounts.filter(acc => {
+    if (!accountSearchQuery.trim()) return true;
+    const q = accountSearchQuery.toLowerCase().trim();
+    const accNo = (acc.account_number || '').toLowerCase();
+    const holder = (acc.customer_name || acc.primary_customer || '').toLowerCase();
+    const id = String(acc.account_id);
+    return accNo.includes(q) || holder.includes(q) || id.includes(q);
+  });
+
+  const selectedAccount = accounts.find(a => String(a.account_id) === String(selectedAccountId));
+
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
           <h2>Transactions</h2>
-          <p>Live transaction ledger and operations (ACID verified)</p>
         </div>
         <div className="header-actions">
           <button className="btn-outline text-purple-600 border-purple-200" onClick={openWithdrawal}>
@@ -178,7 +193,7 @@ const Transactions = () => {
       <div className="card table-card">
         <div className="tabs-container">
           {['All', 'Deposits', 'Withdrawals', 'Interest'].map(tab => (
-            <button 
+            <button
               key={tab}
               className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
               onClick={() => setActiveTab(tab)}
@@ -191,9 +206,9 @@ const Transactions = () => {
         <div className="table-toolbar">
           <div className="search-bar">
             <Search size={18} className="text-muted" />
-            <input 
-              type="text" 
-              placeholder="Search by reference no, account ID or type..." 
+            <input
+              type="text"
+              placeholder="Search by reference no, account ID or type..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -276,26 +291,116 @@ const Transactions = () => {
                 <div className="form-grid">
                   <div className="form-group col-span-2">
                     <label>Destination Account *</label>
-                    <select 
-                      value={selectedAccountId}
-                      onChange={(e) => setSelectedAccountId(e.target.value)}
-                      required
-                    >
-                      {accounts.map(acc => (
-                        <option key={acc.account_id} value={acc.account_id}>
-                          {acc.account_number} — {acc.customer_name || 'Holder'} (Balance: {formatCurrency(acc.current_balance)})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="account-search-wrapper">
+                      {!selectedAccount ? (
+                        <>
+                          <div className="account-search-bar">
+                            <Search size={16} className="search-icon-modal" />
+                            <input
+                              type="text"
+                              placeholder="Search account number, customer name, or ID..."
+                              value={accountSearchQuery}
+                              onFocus={() => setIsAccountDropdownOpen(true)}
+                              onChange={(e) => {
+                                setAccountSearchQuery(e.target.value);
+                                setIsAccountDropdownOpen(true);
+                              }}
+                            />
+                            {accountSearchQuery && (
+                              <button
+                                type="button"
+                                className="clear-search-btn-modal"
+                                onClick={() => {
+                                  setAccountSearchQuery('');
+                                  setIsAccountDropdownOpen(true);
+                                }}
+                                title="Clear search"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
+
+                          {isAccountDropdownOpen && (
+                            <div className="account-search-results-popover">
+                              <div className="account-search-popover-header">
+                                <span>
+                                  {accountSearchQuery
+                                    ? `Matching Accounts (${filteredModalAccounts.length})`
+                                    : `All Accounts (${filteredModalAccounts.length})`}
+                                </span>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--color-primary)' }}>Click to select</span>
+                              </div>
+                              <div className="account-search-results-list">
+                                {filteredModalAccounts.length > 0 ? (
+                                  filteredModalAccounts.map(acc => {
+                                    const isSelected = String(selectedAccountId) === String(acc.account_id);
+                                    return (
+                                      <div
+                                        key={acc.account_id}
+                                        className={`account-search-result-item ${isSelected ? 'selected' : ''}`}
+                                        onClick={() => {
+                                          setSelectedAccountId(String(acc.account_id));
+                                          setIsAccountDropdownOpen(false);
+                                        }}
+                                      >
+                                        <div className="account-search-item-main">
+                                          <div className="account-search-item-title">
+                                            <span className="account-search-item-acc">{acc.account_number}</span>
+                                            <span className="account-search-item-name">{acc.customer_name || 'Holder'}</span>
+                                          </div>
+                                          <div className="account-search-item-sub">
+                                            <span>Balance: <strong>{formatCurrency(acc.current_balance)}</strong></span>
+                                            {acc.plan_name && <span>• Plan: {acc.plan_name}</span>}
+                                          </div>
+                                        </div>
+                                        {isSelected && <Check size={16} className="text-primary" />}
+                                      </div>
+                                    );
+                                  })
+                                ) : (
+                                  <div className="account-search-empty">
+                                    No accounts match "{accountSearchQuery}".
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="selected-account-card">
+                          <div className="selected-account-details">
+                            <span className="selected-account-badge">Destination Account</span>
+                            <div className="selected-account-name">
+                              <strong>{selectedAccount.account_number}</strong> — {selectedAccount.customer_name || 'Holder'}
+                            </div>
+                            <div className="selected-account-sub">
+                              Balance: {formatCurrency(selectedAccount.current_balance)} {selectedAccount.plan_name ? `| Plan: ${selectedAccount.plan_name}` : ''}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-change-account"
+                            onClick={() => {
+                              setSelectedAccountId('');
+                              setIsAccountDropdownOpen(true);
+                            }}
+                          >
+                            Change
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="form-group col-span-2">
                     <label>Processing Agent *</label>
-                    <select 
+                    <select
                       value={selectedAgentId}
                       onChange={(e) => setSelectedAgentId(e.target.value)}
                       required
                     >
+                      <option value="" disabled>-- Select an agent --</option>
                       {agents.map(a => (
                         <option key={a.agent_id} value={a.agent_id}>
                           Agent #{a.agent_id} — {a.agent_name}
@@ -308,12 +413,12 @@ const Transactions = () => {
                     <label>Deposit Amount (LKR) *</label>
                     <div className="amount-input-wrapper">
                       <span className="currency">Rs.</span>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="0.01"
                         min="1"
-                        placeholder="0.00" 
-                        className="amount-input" 
+                        placeholder="0.00"
+                        className="amount-input"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         required
@@ -323,8 +428,8 @@ const Transactions = () => {
 
                   <div className="form-group col-span-2">
                     <label>Reference Number *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={refNo}
                       onChange={(e) => setRefNo(e.target.value)}
                       required
@@ -353,32 +458,120 @@ const Transactions = () => {
             </div>
             <form onSubmit={handleWithdraw}>
               <div className="modal-body">
-                <div className="alert-box warning mb-4" style={{ padding: '0.75rem', backgroundColor: '#FEF3C7', color: '#92400E', borderRadius: '6px' }}>
-                  <strong>Important:</strong> Stored trigger validates minimum balance. Overdrafts will be rejected.
-                </div>
+
                 <div className="form-grid">
                   <div className="form-group col-span-2">
                     <label>Source Account *</label>
-                    <select 
-                      value={selectedAccountId}
-                      onChange={(e) => setSelectedAccountId(e.target.value)}
-                      required
-                    >
-                      {accounts.map(acc => (
-                        <option key={acc.account_id} value={acc.account_id}>
-                          {acc.account_number} — {acc.customer_name || 'Holder'} (Balance: {formatCurrency(acc.current_balance)})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="account-search-wrapper">
+                      {!selectedAccount ? (
+                        <>
+                          <div className="account-search-bar">
+                            <Search size={16} className="search-icon-modal" />
+                            <input
+                              type="text"
+                              placeholder="Search account number, customer name, or ID..."
+                              value={accountSearchQuery}
+                              onFocus={() => setIsAccountDropdownOpen(true)}
+                              onChange={(e) => {
+                                setAccountSearchQuery(e.target.value);
+                                setIsAccountDropdownOpen(true);
+                              }}
+                            />
+                            {accountSearchQuery && (
+                              <button
+                                type="button"
+                                className="clear-search-btn-modal"
+                                onClick={() => {
+                                  setAccountSearchQuery('');
+                                  setIsAccountDropdownOpen(true);
+                                }}
+                                title="Clear search"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
+
+                          {isAccountDropdownOpen && (
+                            <div className="account-search-results-popover">
+                              <div className="account-search-popover-header">
+                                <span>
+                                  {accountSearchQuery
+                                    ? `Matching Accounts (${filteredModalAccounts.length})`
+                                    : `All Accounts (${filteredModalAccounts.length})`}
+                                </span>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--color-primary)' }}>Click to select</span>
+                              </div>
+                              <div className="account-search-results-list">
+                                {filteredModalAccounts.length > 0 ? (
+                                  filteredModalAccounts.map(acc => {
+                                    const isSelected = String(selectedAccountId) === String(acc.account_id);
+                                    return (
+                                      <div
+                                        key={acc.account_id}
+                                        className={`account-search-result-item ${isSelected ? 'selected' : ''}`}
+                                        onClick={() => {
+                                          setSelectedAccountId(String(acc.account_id));
+                                          setIsAccountDropdownOpen(false);
+                                        }}
+                                      >
+                                        <div className="account-search-item-main">
+                                          <div className="account-search-item-title">
+                                            <span className="account-search-item-acc">{acc.account_number}</span>
+                                            <span className="account-search-item-name">{acc.customer_name || 'Holder'}</span>
+                                          </div>
+                                          <div className="account-search-item-sub">
+                                            <span>Balance: <strong>{formatCurrency(acc.current_balance)}</strong></span>
+                                            {acc.plan_name && <span>• Plan: {acc.plan_name}</span>}
+                                          </div>
+                                        </div>
+                                        {isSelected && <Check size={16} className="text-primary" />}
+                                      </div>
+                                    );
+                                  })
+                                ) : (
+                                  <div className="account-search-empty">
+                                    No accounts match "{accountSearchQuery}".
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="selected-account-card">
+                          <div className="selected-account-details">
+                            <span className="selected-account-badge" style={{ color: '#7C3AED' }}>Source Account</span>
+                            <div className="selected-account-name">
+                              <strong>{selectedAccount.account_number}</strong> — {selectedAccount.customer_name || 'Holder'}
+                            </div>
+                            <div className="selected-account-sub">
+                              Balance: {formatCurrency(selectedAccount.current_balance)} {selectedAccount.plan_name ? `| Plan: ${selectedAccount.plan_name}` : ''}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-change-account"
+                            onClick={() => {
+                              setSelectedAccountId('');
+                              setIsAccountDropdownOpen(true);
+                            }}
+                          >
+                            Change
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="form-group col-span-2">
                     <label>Processing Agent *</label>
-                    <select 
+                    <select
                       value={selectedAgentId}
                       onChange={(e) => setSelectedAgentId(e.target.value)}
                       required
                     >
+                      <option value="" disabled>-- Select an agent --</option>
                       {agents.map(a => (
                         <option key={a.agent_id} value={a.agent_id}>
                           Agent #{a.agent_id} — {a.agent_name}
@@ -391,12 +584,12 @@ const Transactions = () => {
                     <label>Withdrawal Amount (LKR) *</label>
                     <div className="amount-input-wrapper">
                       <span className="currency">Rs.</span>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="0.01"
                         min="1"
-                        placeholder="0.00" 
-                        className="amount-input text-purple-600" 
+                        placeholder="0.00"
+                        className="amount-input text-back-600"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         required
@@ -406,8 +599,8 @@ const Transactions = () => {
 
                   <div className="form-group col-span-2">
                     <label>Reference Number *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={refNo}
                       onChange={(e) => setRefNo(e.target.value)}
                       required
@@ -417,7 +610,7 @@ const Transactions = () => {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn-outline" onClick={() => setIsWithdrawModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn-primary" style={{backgroundColor: '#DC2626'}} disabled={submitting}>
+                <button type="submit" className="btn-primary" style={{ backgroundColor: '#DC2626' }} disabled={submitting}>
                   {submitting ? 'Processing...' : 'Confirm Withdrawal'}
                 </button>
               </div>
