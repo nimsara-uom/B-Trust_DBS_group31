@@ -19,16 +19,17 @@ const Sidebar = () => {
   const { logout, user } = useAuth();
 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/transactions', label: 'Transactions', icon: '💸' },
-    { path: '/accounts', label: 'Accounts', icon: '🏦' },
-    { path: '/fixed-deposits', label: 'Fixed Deposits', icon: '🔒' },
-    { path: '/interest', label: 'Interest Engine', icon: '📈' },
-    { path: '/reports', label: 'Reports', icon: '📋' },
-    { path: '/customers', label: 'Customers', icon: '👥' },
-    { path: '/agents', label: 'Agents', icon: '👔' },
-    { path: '/settings', label: 'Settings', icon: '⚙️' },
+    { path: '/dashboard', label: 'Dashboard', icon: '⊞' },
+    { path: '/transactions', label: 'Transactions', icon: '⇄' },
+    { path: '/accounts', label: 'Accounts', icon: '💳︎' },
+    { path: '/fixed-deposits', label: 'Fixed Deposits', icon: '🔒︎' },
+    { path: '/interest', label: 'Interest Engine', icon: '⏵︎' },
+    { path: '/reports', label: 'Reports', icon: '📋︎' },
+    { path: '/customers', label: 'Customers', icon: '👥︎' },
+    { path: '/agents', label: 'Agents', icon: '👔︎' },
+    { path: '/settings', label: 'Settings', icon: '⚙︎' },
   ];
+
 
   const handleLogout = () => {
     logout();
@@ -58,11 +59,11 @@ const Sidebar = () => {
       {/* User Info & Logout Button */}
       <div className="sidebar-footer">
         <div className="sidebar-user-info">
-          <span className="user-avatar">👤</span>
+          <span className="user-avatar">👤︎</span>
           <span className="user-name">{user?.username || 'Admin'}</span>
         </div>
         <button className="sidebar-logout-btn" onClick={handleLogout} title="Sign Out">
-          🚪 Sign Out
+          🚪︎ Sign Out
         </button>
       </div>
     </nav>

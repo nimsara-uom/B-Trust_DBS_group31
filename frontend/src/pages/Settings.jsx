@@ -16,10 +16,9 @@ const Settings = () => {
       <div className="page-header">
         <div>
           <h2>System Settings</h2>
-          <p>Configure system preferences and application settings.</p>
         </div>
       </div>
-      
+
       <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '2rem' }}>
         <div className="card" style={{ padding: '1rem' }}>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -42,7 +41,7 @@ const Settings = () => {
           <div className="card-header" style={{ padding: '1.5rem 1.5rem 0', marginBottom: '1rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '1rem' }}>
             <h3>General Settings</h3>
           </div>
-          
+
           <form onSubmit={handleSave} style={{ padding: '1.5rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
               <div className="form-group">

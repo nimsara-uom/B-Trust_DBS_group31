@@ -11,53 +11,53 @@ import {
 } from '../api';
 
 const REPORTS = [
-  { 
-    id: 1, 
-    title: 'Agent Transaction Summary', 
-    desc: 'Transaction volumes, total deposits, and withdrawals by agent.', 
-    icon: Users, 
+  {
+    id: 1,
+    title: 'Agent Transaction Summary',
+    desc: 'Transaction volumes, total deposits, and withdrawals by agent.',
+    icon: Users,
     color: 'slate',
-    fetcher: getAgentTransactionSummary 
+    fetcher: getAgentTransactionSummary
   },
-  { 
-    id: 2, 
-    title: 'Savings Account Summary', 
-    desc: 'Transaction count, total amount, and current balance across accounts.', 
-    icon: Wallet, 
+  {
+    id: 2,
+    title: 'Savings Account Summary',
+    desc: 'Transaction count, total amount, and current balance across accounts.',
+    icon: Wallet,
     color: 'green',
-    fetcher: getAccountTransactionSummary 
+    fetcher: getAccountTransactionSummary
   },
-  { 
-    id: 3, 
-    title: 'Active Fixed Deposits Portfolio', 
-    desc: 'Active FDs, principal amounts, interest rates, and upcoming payout dates.', 
-    icon: Wallet, 
+  {
+    id: 3,
+    title: 'Active Fixed Deposits Portfolio',
+    desc: 'Active FDs, principal amounts, interest rates, and upcoming payout dates.',
+    icon: Wallet,
     color: 'yellow',
-    fetcher: getActiveFDsReport 
+    fetcher: getActiveFDsReport
   },
-  { 
-    id: 4, 
-    title: 'Monthly Interest Distribution', 
-    desc: 'Audit report of monthly automated interest engine calculations.', 
-    icon: FileBarChart, 
+  {
+    id: 4,
+    title: 'Monthly Interest Distribution',
+    desc: 'Audit report of monthly automated interest engine calculations.',
+    icon: FileBarChart,
     color: 'pink',
-    fetcher: getMonthlyInterestDistribution 
+    fetcher: getMonthlyInterestDistribution
   },
-  { 
-    id: 5, 
-    title: 'Customer Activity Summary', 
-    desc: 'Deposits, withdrawals, and net balance activity grouped by customer.', 
-    icon: Users, 
+  {
+    id: 5,
+    title: 'Customer Activity Summary',
+    desc: 'Deposits, withdrawals, and net balance activity grouped by customer.',
+    icon: Users,
     color: 'blue',
-    fetcher: getCustomerActivitySummary 
+    fetcher: getCustomerActivitySummary
   },
-  { 
-    id: 6, 
-    title: 'Monthly Bank Transaction Summary', 
-    desc: 'Aggregated monthly deposits, withdrawals, and net fund movements.', 
-    icon: Activity, 
+  {
+    id: 6,
+    title: 'Monthly Bank Transaction Summary',
+    desc: 'Aggregated monthly deposits, withdrawals, and net fund movements.',
+    icon: Activity,
     color: 'purple',
-    fetcher: getMonthlyBankTransactionSummary 
+    fetcher: getMonthlyBankTransactionSummary
   }
 ];
 
@@ -124,7 +124,6 @@ const Reports = () => {
       <div className="page-header">
         <div>
           <h2>Management Reports</h2>
-          <p>Generate, view live, and export official B-Trust database reports</p>
         </div>
       </div>
 
@@ -140,13 +139,13 @@ const Reports = () => {
                 <h3>{report.title}</h3>
               </div>
               <p className="report-desc">{report.desc}</p>
-              
+
               <div className="report-actions">
                 <button className="btn-outline flex-1" onClick={() => handleViewReport(report)}>
-                  <Eye size={16}/> View
+                  <Eye size={16} /> View
                 </button>
                 <button className="btn-primary-yellow flex-1" onClick={() => handleExportCSV(report)}>
-                  <Download size={16}/> Export CSV
+                  <Download size={16} /> Export CSV
                 </button>
               </div>
             </div>
@@ -203,8 +202,8 @@ const Reports = () => {
             </div>
             <div className="modal-footer">
               <button className="btn-outline" onClick={() => setActiveReport(null)}>Close</button>
-              <button 
-                className="btn-primary" 
+              <button
+                className="btn-primary"
                 onClick={() => handleExportCSV(activeReport)}
                 disabled={reportData.length === 0}
               >
