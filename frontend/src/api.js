@@ -48,8 +48,8 @@ export const createCustomer = (data) => api.post('/api/customers', data);
 
 // Savings Accounts & Plans
 export const getPlans = () => api.get('/api/plans');
-export const getAccounts = (status, planId) => 
-  api.get('/api/accounts', { params: { status, plan_id: planId } });
+export const getAccounts = (status, planId, search, plan) => 
+  api.get('/api/accounts', { params: { status, plan_id: planId, search, plan } });
 export const getAccount = (id) => api.get(`/api/accounts/${id}`);
 export const createAccount = (data) => api.post('/api/accounts', data);
 
