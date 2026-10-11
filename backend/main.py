@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from auth import get_current_user
 from database import get_db
-from routers import transactions, accounts, fixed_deposit, report, branches, agents, customers, dashboard
+from routers import transactions, accounts, fixed_deposit, report, branches, agents, customers, dashboard, auth
 
 app = FastAPI(
     title="MIMS API",
@@ -19,7 +19,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routers — every endpoint is protected by HTTP Basic Auth
+# Public Auth router
+app.include_router(auth.router, prefix="/api")
+
+# Register routers — protected by HTTP Basic Auth
 _auth = [Depends(get_current_user)]
 app.include_router(transactions.router,   dependencies=_auth)
 app.include_router(accounts.router,       dependencies=_auth)

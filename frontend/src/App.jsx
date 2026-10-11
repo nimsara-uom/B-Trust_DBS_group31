@@ -1,5 +1,7 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './AuthContext';
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Accounts from './pages/Accounts';
@@ -13,8 +15,11 @@ import './App.css';
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: '📊' },
+    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
     { path: '/transactions', label: 'Transactions', icon: '💸' },
     { path: '/accounts', label: 'Accounts', icon: '🏦' },
     { path: '/fixed-deposits', label: 'Fixed Deposits', icon: '🔒' },
@@ -25,12 +30,20 @@ const Sidebar = () => {
     { path: '/settings', label: 'Settings', icon: '⚙️' },
   ];
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <nav className="sidebar">
       <div className="sidebar-header">
-        <h2><span style={{ fontSize: '1.2em', marginRight: '8px' }}>🏦</span>B-Trust</h2>
-        <p>Admin Portal</p>
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <h2><span style={{ fontSize: '1.2em', marginRight: '8px' }}>🏦</span>B-Trust</h2>
+          <p>Admin Portal</p>
+        </Link>
       </div>
+
       <ul className="sidebar-nav">
         {navItems.map((item) => (
           <li key={item.path} className={location.pathname === item.path ? 'active' : ''}>
@@ -41,30 +54,63 @@ const Sidebar = () => {
           </li>
         ))}
       </ul>
+
+      {/* User Info & Logout Button */}
+      <div className="sidebar-footer">
+        <div className="sidebar-user-info">
+          <span className="user-avatar">👤</span>
+          <span className="user-name">{user?.username || 'Admin'}</span>
+        </div>
+        <button className="sidebar-logout-btn" onClick={handleLogout} title="Sign Out">
+          🚪 Sign Out
+        </button>
+      </div>
     </nav>
+  );
+};
+
+// Protected Layout for Dashboard & Portal Pages
+const ProtectedLayout = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <div className="app-container">
+      <Sidebar />
+      <main className="main-content">
+        {children}
+      </main>
+    </div>
   );
 };
 
 function App() {
   return (
-    <BrowserRouter>
-      <div className="app-container">
-        <Sidebar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/accounts" element={<Accounts />} />
-            <Route path="/fixed-deposits" element={<FixedDeposits />} />
-            <Route path="/interest" element={<InterestManagement />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/agents" element={<Agents />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </main>
-      </div>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Landing Page with Hero Section & Login */}
+          <Route path="/" element={<Landing />} />
+
+          {/* Protected Dashboard & Functional Banking Pages */}
+          <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
+          <Route path="/transactions" element={<ProtectedLayout><Transactions /></ProtectedLayout>} />
+          <Route path="/accounts" element={<ProtectedLayout><Accounts /></ProtectedLayout>} />
+          <Route path="/fixed-deposits" element={<ProtectedLayout><FixedDeposits /></ProtectedLayout>} />
+          <Route path="/interest" element={<ProtectedLayout><InterestManagement /></ProtectedLayout>} />
+          <Route path="/reports" element={<ProtectedLayout><Reports /></ProtectedLayout>} />
+          <Route path="/customers" element={<ProtectedLayout><Customers /></ProtectedLayout>} />
+          <Route path="/agents" element={<ProtectedLayout><Agents /></ProtectedLayout>} />
+          <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
+
+          {/* Catch-all redirect to Landing */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

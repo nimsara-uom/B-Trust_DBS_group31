@@ -1,15 +1,39 @@
 import axios from 'axios';
 
+// Retrieve stored credentials or fallback
+const getAuthCredentials = () => {
+  try {
+    const stored = localStorage.getItem('btrust_auth');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    // ignore
+  }
+  return { username: 'admin', password: 'admin' };
+};
+
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000',
-  auth: {
-    username: 'admin',
-    password: 'admin',
-  },
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000',
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+api.interceptors.request.use((config) => {
+  const creds = getAuthCredentials();
+  if (creds && creds.username && creds.password) {
+    config.auth = {
+      username: creds.username,
+      password: creds.password,
+    };
+  }
+  return config;
+});
+
+// Auth API
+export const loginUser = (username, password) => 
+  api.post('/api/auth/login', { username, password });
 
 export const getHealth = () => api.get('/health');
 
