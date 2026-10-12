@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS CUSTOMER (
     phone VARCHAR(15) NOT NULL,
     email VARCHAR(100) , 
     customer_type ENUM('Individual', 'Joint') NOT NULL DEFAULT 'Individual',
+    password VARCHAR(255) NULL DEFAULT NULL,
 
     CONSTRAINT pk_customer PRIMARY KEY (customer_id),
     CONSTRAINT uq_customer_nic UNIQUE (national_id),
