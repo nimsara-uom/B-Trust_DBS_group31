@@ -32,7 +32,11 @@ const Landing = () => {
       setShowLoginModal(false);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Invalid email or password');
+      if (!err.response) {
+        setError('Cannot connect to backend server. Ensure backend is running and VITE_API_BASE_URL is configured on Vercel.');
+      } else {
+        setError(err.response?.data?.detail || 'Invalid email or password');
+      }
     } finally {
       setLoading(false);
     }
