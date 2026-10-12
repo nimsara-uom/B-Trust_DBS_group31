@@ -6,8 +6,11 @@ backend/.env.backup
 
 # Python cache & virtual environments
 __pycache__/
+**/__pycache__/
+*.pyc
 *.py[cod]
 *$py.class
+**/*.pyc
 venv/
 .venv/
 env/
