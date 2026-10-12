@@ -13,7 +13,7 @@ app = FastAPI(
 # Add CORS middleware to allow the frontend to connect without errors
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origin_regex=r".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
