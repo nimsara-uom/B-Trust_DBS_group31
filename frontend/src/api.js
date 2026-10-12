@@ -71,6 +71,7 @@ export const runInterestEngine = (runDate, systemAgentId = 1) =>
 
 // Agents & Branches
 export const getAgents = () => api.get('/api/agents');
+export const createAgent = (data) => api.post('/api/agents', data);
 export const getBranches = () => api.get('/api/branches');
 
 // Reports
