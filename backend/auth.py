@@ -27,13 +27,26 @@ def get_current_user(credentials: HTTPBasicCredentials = Depends(security), db =
             "username": input_username
         }
 
-    # 2. Customer check (Customer ID as username, password or NIC as password)
-    if input_username.isdigit():
+    # 2. Customer check (Customer ID / cust-<id> as username, password or NIC as password)
+    cust_id = None
+    lower_user = input_username.lower()
+    if lower_user.startswith("cust-"):
+        raw_id = lower_user.replace("cust-", "").strip()
+        if raw_id.isdigit():
+            cust_id = int(raw_id)
+    elif lower_user.startswith("cust"):
+        raw_id = lower_user.replace("cust", "").strip()
+        if raw_id.isdigit():
+            cust_id = int(raw_id)
+    elif input_username.isdigit():
+        cust_id = int(input_username)
+
+    if cust_id is not None:
         cursor, _ = db
         try:
             cursor.execute(
                 "SELECT customer_id, full_name, national_id, password FROM CUSTOMER WHERE customer_id = %s",
-                (int(input_username),)
+                (cust_id,)
             )
             cust = cursor.fetchone()
             if cust:
@@ -42,7 +55,8 @@ def get_current_user(credentials: HTTPBasicCredentials = Depends(security), db =
 
                 if stored_pwd is not None and stored_pwd != "":
                     # Custom password exists: strictly require custom password
-                    valid_pass = secrets.compare_digest(input_password.encode("utf8"), stored_pwd.encode("utf8"))
+                    from security import verify_password
+                    valid_pass = verify_password(input_password, stored_pwd)
                 elif cust.get("national_id"):
                     # Default: compare with national_id (NIC)
                     valid_pass = secrets.compare_digest(input_password.upper().encode("utf8"), cust["national_id"].upper().encode("utf8"))

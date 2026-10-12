@@ -68,9 +68,10 @@ def change_customer_password(data: ChangePasswordRequest, db=Depends(get_db)):
     stored_pwd = cust.get("password")
     is_valid_current = False
 
+    from security import hash_password, verify_password
+
     if stored_pwd is not None and stored_pwd != "":
-        import secrets
-        is_valid_current = secrets.compare_digest(curr_pwd.encode("utf8"), stored_pwd.encode("utf8"))
+        is_valid_current = verify_password(curr_pwd, stored_pwd)
     else:
         # Default fallback to NIC
         import secrets
@@ -78,17 +79,18 @@ def change_customer_password(data: ChangePasswordRequest, db=Depends(get_db)):
         is_valid_current = secrets.compare_digest(curr_pwd.upper().encode("utf8"), nic.upper().encode("utf8"))
 
     if not is_valid_current:
-        raise HTTPException(status_code=400, detail="Current password / NIC is incorrect.")
+        raise HTTPException(status_code=400, detail="Current password is incorrect.")
 
     try:
+        hashed_new_pwd = hash_password(new_pwd)
         cursor.execute(
             "UPDATE CUSTOMER SET password = %s WHERE customer_id = %s",
-            (new_pwd, cust_id)
+            (hashed_new_pwd, cust_id)
         )
         conn.commit()
         return {
             "status": "success",
-            "message": "Password updated successfully. You must now use your new password to sign in."
+            "message": "Password updated successfully."
         }
     except Exception as e:
         conn.rollback()

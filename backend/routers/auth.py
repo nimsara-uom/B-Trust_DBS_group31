@@ -41,12 +41,25 @@ def login(creds: LoginRequest, db=Depends(get_db)):
                 "token": "authenticated_admin_session"
             }
 
-    # 2. Customer login check (by numeric Customer ID or NIC as username)
+    # 2. Customer login check (by cust-<id>, numeric Customer ID, or NIC)
     try:
-        if input_user.isdigit():
+        cust_id = None
+        lower_input = input_user.lower()
+        if lower_input.startswith("cust-"):
+            raw_id = lower_input.replace("cust-", "").strip()
+            if raw_id.isdigit():
+                cust_id = int(raw_id)
+        elif lower_input.startswith("cust"):
+            raw_id = lower_input.replace("cust", "").strip()
+            if raw_id.isdigit():
+                cust_id = int(raw_id)
+        elif input_user.isdigit():
+            cust_id = int(input_user)
+
+        if cust_id is not None:
             cursor.execute(
                 "SELECT customer_id, full_name, national_id, password, email, phone FROM CUSTOMER WHERE customer_id = %s",
-                (int(input_user),)
+                (cust_id,)
             )
         else:
             cursor.execute(
@@ -61,18 +74,20 @@ def login(creds: LoginRequest, db=Depends(get_db)):
 
             if stored_pwd is not None and stored_pwd != "":
                 # Customer has changed/set a password: only this password is valid (NIC is NO LONGER valid)
-                valid_customer_pass = secrets.compare_digest(input_pass.encode("utf8"), stored_pwd.encode("utf8"))
+                from security import verify_password
+                valid_customer_pass = verify_password(input_pass, stored_pwd)
             else:
                 # Password is null: use national_id (NIC) as initial default password
                 if cust.get("national_id"):
                     valid_customer_pass = secrets.compare_digest(input_pass.upper().encode("utf8"), cust["national_id"].upper().encode("utf8"))
 
             if valid_customer_pass:
+                formatted_username = f"cust-{cust['customer_id']}"
                 return {
                     "status": "success",
                     "role": "customer",
                     "customer_id": cust["customer_id"],
-                    "username": str(cust["customer_id"]),
+                    "username": formatted_username,
                     "name": cust["full_name"],
                     "national_id": cust["national_id"],
                     "has_custom_password": bool(stored_pwd),
