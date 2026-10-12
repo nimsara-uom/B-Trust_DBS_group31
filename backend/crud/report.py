@@ -5,8 +5,8 @@ def get_agent_transaction_summary(cursor):
             a.agent_name as agent_name, 
             count(tr.transaction_id) as number_of_transactions,
             coalesce(sum(tr.amount), 0.00) as total_amount,
-            agent_total_deposit_amount(a.agent_id) as total_deposits, 
-            agent_total_withdrawal_amount(a.agent_id) as total_withdrawals
+            coalesce(agent_total_deposit_amount(a.agent_id), 0.00) as total_deposits, 
+            coalesce(agent_total_withdrawal_amount(a.agent_id), 0.00) as total_withdrawals
             
         from AGENT a 
             left join BANK_TRANSACTION tr 
