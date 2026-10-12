@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: mims-backend
+    runtime: python
+    region: singapore  # Closest to Sri Lanka
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DB_HOST
+        value: mysql-btrust.alwaysdata.net
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_USER
+        value: btrust_admin
+      - key: DB_PASSWORD
+        sync: false          # Set this manually in Render dashboard — never commit the real password
+      - key: DB_NAME
+        value: btrust_group31
+      - key: DB_USE_SSL
+        value: "false"
+      - key: AUTH_USERNAME
+        value: admin
+      - key: AUTH_PASSWORD
+        sync: false          # Set this manually in Render dashboard
