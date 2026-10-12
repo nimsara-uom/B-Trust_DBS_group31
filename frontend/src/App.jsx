@@ -11,6 +11,7 @@ import Reports from './pages/Reports';
 import Customers from './pages/Customers';
 import Agents from './pages/Agents';
 import Settings from './pages/Settings';
+import CustomerPortal from './pages/CustomerPortal';
 import './App.css';
 
 const Sidebar = () => {
@@ -29,7 +30,6 @@ const Sidebar = () => {
     { path: '/agents', label: 'Agents', icon: '👔︎' },
     { path: '/settings', label: 'Settings', icon: '⚙︎' },
   ];
-
 
   const handleLogout = () => {
     logout();
@@ -70,12 +70,17 @@ const Sidebar = () => {
   );
 };
 
-// Protected Layout for Dashboard & Portal Pages
+// Protected Layout for Admin Dashboard & Portal Pages
 const ProtectedLayout = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
+  }
+
+  // If a customer accesses admin routes, redirect to customer portal
+  if (user?.role === 'customer') {
+    return <Navigate to="/portal" replace />;
   }
 
   return (
@@ -88,6 +93,17 @@ const ProtectedLayout = ({ children }) => {
   );
 };
 
+// Protected Customer Layout
+const ProtectedCustomerLayout = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -95,6 +111,16 @@ function App() {
         <Routes>
           {/* Public Landing Page with Hero Section & Login */}
           <Route path="/" element={<Landing />} />
+
+          {/* Customer Self-Service Portal */}
+          <Route 
+            path="/portal" 
+            element={
+              <ProtectedCustomerLayout>
+                <CustomerPortal />
+              </ProtectedCustomerLayout>
+            } 
+          />
 
           {/* Protected Dashboard & Functional Banking Pages */}
           <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />

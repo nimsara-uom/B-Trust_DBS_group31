@@ -16,10 +16,17 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     // Authenticate against backend API
     const response = await loginUser(username, password);
-    const userData = { username, token: response.data.token || 'authenticated' };
-    localStorage.setItem('btrust_auth', JSON.stringify({ username, password }));
+    const data = response.data;
+    const userData = { 
+      username, 
+      token: data.token || 'authenticated',
+      role: data.role || 'admin',
+      customer_id: data.customer_id || null,
+      name: data.name || (data.role === 'admin' ? 'Bank Admin' : username)
+    };
+    localStorage.setItem('btrust_auth', JSON.stringify({ username, password, ...userData }));
     setUser(userData);
-    return response.data;
+    return data;
   };
 
   const logout = () => {

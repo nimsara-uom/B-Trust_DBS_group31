@@ -45,6 +45,12 @@ export const getCustomers = (search) =>
   api.get('/api/customers', { params: search ? { search } : {} });
 export const getCustomer = (id) => api.get(`/api/customers/${id}`);
 export const createCustomer = (data) => api.post('/api/customers', data);
+export const getCustomerPortalData = (customerId) => 
+  api.get(`/api/customers/${customerId}/portal`);
+export const transferCustomerFunds = (data) => 
+  api.post('/api/customers/transfer', data);
+export const changeCustomerPassword = (data) => 
+  api.post('/api/customers/change-password', data);
 
 // Savings Accounts & Plans
 export const getPlans = () => api.get('/api/plans');

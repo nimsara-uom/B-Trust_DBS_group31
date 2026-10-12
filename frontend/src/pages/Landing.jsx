@@ -6,7 +6,7 @@ import './Landing.css';
 
 const Landing = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated, user, login } = useAuth();
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -16,7 +16,11 @@ const Landing = () => {
 
   const handleActionClick = () => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      if (user?.role === 'customer') {
+        navigate('/portal');
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       setShowLoginModal(true);
     }
@@ -28,14 +32,18 @@ const Landing = () => {
     setLoading(true);
 
     try {
-      await login(emailOrUsername, password);
+      const res = await login(emailOrUsername, password);
       setShowLoginModal(false);
-      navigate('/dashboard');
+      if (res?.role === 'customer') {
+        navigate('/portal');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       if (!err.response) {
-        setError('Cannot connect to backend server. Ensure backend is running and VITE_API_BASE_URL is configured on Vercel.');
+        setError('Cannot connect to backend server. Ensure backend is running and VITE_API_BASE_URL is configured.');
       } else {
-        setError(err.response?.data?.detail || 'Invalid email or password');
+        setError(err.response?.data?.detail || 'Invalid credentials');
       }
     } finally {
       setLoading(false);
@@ -153,12 +161,12 @@ const Landing = () => {
 
             <form onSubmit={handleLoginSubmit} className="auth-form">
               <div className="form-group">
-                <label>Email Address / Username</label>
+                <label>Username</label>
                 <input
                   type="text"
                   value={emailOrUsername}
                   onChange={(e) => setEmailOrUsername(e.target.value)}
-                  placeholder="admin@btrust.com or admin"
+                  placeholder="username"
                   required
                   autoFocus
                 />
@@ -170,7 +178,7 @@ const Landing = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="password"
                   required
                 />
               </div>
