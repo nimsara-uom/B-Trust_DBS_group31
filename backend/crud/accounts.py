@@ -258,8 +258,30 @@ def create_savings_account(cursor, data: AccountCreate) -> Dict[str, Any]:
             detail=f"Savings plan with ID {data.plan_id} does not exist."
         )
 
-    # 3. Validate Age Eligibility (Joint plan doesn't check age of single owner)
-    if plan["plan_name"] != "Joint":
+    # 3. Handle Joint plan customer requirements & age eligibility
+    if plan["plan_name"] == "Joint":
+        if not data.secondary_customer_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A Joint savings account requires two distinct account holders. Please select a secondary customer."
+            )
+        if data.secondary_customer_id == data.customer_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Primary and secondary account holders cannot be the same customer."
+            )
+        # Fetch secondary customer
+        cursor.execute(
+            "SELECT customer_id, full_name, dob, customer_type FROM CUSTOMER WHERE customer_id = %s",
+            (data.secondary_customer_id,)
+        )
+        sec_customer = cursor.fetchone()
+        if not sec_customer:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Secondary customer with ID {data.secondary_customer_id} does not exist."
+            )
+    else:
         validate_plan_eligibility(plan["plan_name"], customer["dob"])
 
     # 4. Validate Minimum Balance
@@ -287,12 +309,16 @@ def create_savings_account(cursor, data: AccountCreate) -> Dict[str, Any]:
     cursor.execute(insert_sql, (data.plan_id, account_number, data.initial_deposit))
     new_account_id = cursor.lastrowid
 
-    # 7. Insert into ACCOUNTHOLDER
+    # 7. Insert into ACCOUNTHOLDER (Primary customer)
     holder_sql = """
         INSERT INTO ACCOUNTHOLDER (account_id, customer_id)
         VALUES (%s, %s)
     """
     cursor.execute(holder_sql, (new_account_id, data.customer_id))
+
+    # Link secondary customer if Joint plan or provided
+    if data.secondary_customer_id and data.secondary_customer_id != data.customer_id:
+        cursor.execute(holder_sql, (new_account_id, data.secondary_customer_id))
 
     # Return full created account details
     created_account = get_account_by_id(cursor, new_account_id)

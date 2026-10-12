@@ -32,12 +32,19 @@ const Accounts = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [custSearchQuery, setCustSearchQuery] = useState('');
   const [isCustDropdownOpen, setIsCustDropdownOpen] = useState(false);
+
+  // Secondary customer for Joint accounts
+  const [selectedSecondaryCustomerId, setSelectedSecondaryCustomerId] = useState('');
+  const [secondaryCustSearchQuery, setSecondaryCustSearchQuery] = useState('');
+  const [isSecondaryCustDropdownOpen, setIsSecondaryCustDropdownOpen] = useState(false);
+
   const [initialDeposit, setInitialDeposit] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [formSuccess, setFormSuccess] = useState(null);
 
   const custDropdownRef = useRef(null);
+  const secCustDropdownRef = useRef(null);
 
   useEffect(() => {
     loadData();
@@ -47,6 +54,9 @@ const Accounts = () => {
     const handleClickOutside = (e) => {
       if (custDropdownRef.current && !custDropdownRef.current.contains(e.target)) {
         setIsCustDropdownOpen(false);
+      }
+      if (secCustDropdownRef.current && !secCustDropdownRef.current.contains(e.target)) {
+        setIsSecondaryCustDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -69,6 +79,7 @@ const Accounts = () => {
       setCustomers(customersRes.data || []);
       // Default: no customer selected
       setSelectedCustomerId('');
+      setSelectedSecondaryCustomerId('');
       // Default: no plan selected
       setSelectedPlanId('');
     } catch (err) {
@@ -83,6 +94,8 @@ const Accounts = () => {
   const handleOpenModal = () => {
     setSelectedCustomerId('');
     setCustSearchQuery('');
+    setSelectedSecondaryCustomerId('');
+    setSecondaryCustSearchQuery('');
     setSelectedPlanId('');
     setInitialDeposit('');
     setError(null);
@@ -132,14 +145,28 @@ const Accounts = () => {
   const handleCreateAccount = async (e) => {
     e.preventDefault();
     if (!selectedCustomerId) {
-      alert('Please select a customer.');
+      alert('Please select a primary customer.');
       return;
     }
     if (!selectedPlanId) {
       alert('Please select a savings plan.');
       return;
     }
+
     const selectedPlan = plans.find(p => String(p.plan_id) === String(selectedPlanId));
+    const isJoint = selectedPlan && selectedPlan.plan_name === 'Joint';
+
+    if (isJoint) {
+      if (!selectedSecondaryCustomerId) {
+        alert('Joint accounts require two customers. Please select a secondary customer.');
+        return;
+      }
+      if (String(selectedSecondaryCustomerId) === String(selectedCustomerId)) {
+        alert('Primary and secondary account holders cannot be the same customer. Please select two different customers.');
+        return;
+      }
+    }
+
     const minBal = selectedPlan ? Number(selectedPlan.minimum_balance || 0) : 0;
     const depositAmount = parseFloat(initialDeposit);
 
@@ -154,6 +181,7 @@ const Accounts = () => {
       setError(null);
       await createAccount({
         customer_id: parseInt(selectedCustomerId),
+        secondary_customer_id: isJoint ? parseInt(selectedSecondaryCustomerId) : null,
         plan_id: parseInt(selectedPlanId),
         initial_deposit: depositAmount,
       });
@@ -163,6 +191,7 @@ const Accounts = () => {
         setIsModalOpen(false);
         setFormSuccess(null);
         setSelectedCustomerId('');
+        setSelectedSecondaryCustomerId('');
         setSelectedPlanId('');
         setInitialDeposit('');
       }, 1000);
@@ -226,8 +255,24 @@ const Accounts = () => {
     return nameMatch || idMatch || nicMatch;
   });
 
+  const filteredModalSecondaryCustomers = customers.filter(c => {
+    // Avoid listing the already selected primary customer
+    if (String(c.customer_id) === String(selectedCustomerId)) return false;
+    if (!secondaryCustSearchQuery.trim()) return true;
+    const q = secondaryCustSearchQuery.toLowerCase().trim();
+    const nameMatch = (c.full_name || '').toLowerCase().includes(q);
+    const idFormatted = `cust-${String(c.customer_id).padStart(3, '0')}`.toLowerCase();
+    const idRaw = String(c.customer_id);
+    const idMatch = idFormatted.includes(q) || idRaw.includes(q);
+    const nicMatch = (c.national_id || '').toLowerCase().includes(q);
+
+    return nameMatch || idMatch || nicMatch;
+  });
+
   const selectedCustomer = customers.find(c => String(c.customer_id) === String(selectedCustomerId));
+  const selectedSecondaryCustomer = customers.find(c => String(c.customer_id) === String(selectedSecondaryCustomerId));
   const selectedPlan = plans.find(p => String(p.plan_id) === String(selectedPlanId));
+  const isJointPlan = selectedPlan && selectedPlan.plan_name === 'Joint';
   const minRequiredBalance = selectedPlan ? Number(selectedPlan.minimum_balance || 0) : 0;
 
   return (
@@ -250,7 +295,7 @@ const Accounts = () => {
       )}
 
       <h3 className="section-title">Available Savings Plans</h3>
-      <div className="plans-grid">
+      <div className="savings-plans-grid">
         {loading ? (
           <div style={{ padding: '0.75rem', color: '#7F8C8D' }}>Loading plans from database...</div>
         ) : (
@@ -260,7 +305,7 @@ const Accounts = () => {
             return (
               <div
                 key={plan.plan_id}
-                className="plan-card"
+                className="savings-plan-card"
               >
                 <div className="plan-card-top">
                   <div className={`plan-icon-sm bg-${color}-100 text-${color}-600`}>
@@ -432,16 +477,37 @@ const Accounts = () => {
             <form onSubmit={handleCreateAccount}>
               <div className="modal-body">
                 <div className="form-grid">
-                  {/* Customer search & selection */}
+                  {/* Savings Plan Selection */}
                   <div className="form-group col-span-2">
-                    <label>Select Customer *</label>
+                    <label>Select Savings Plan *</label>
+                    <div className="plan-selector">
+                      {plans.map(plan => (
+                        <div
+                          key={plan.plan_id}
+                          className={`plan-option ${Number(selectedPlanId) === plan.plan_id ? 'selected' : ''}`}
+                          onClick={() => handlePlanSelect(plan)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <strong>{plan.plan_name}</strong>
+                          <span>{plan.interest_rate}%</span>
+                          <span className="plan-option-min">Min: {formatCurrency(plan.minimum_balance)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Customer 1 (Primary Account Holder) */}
+                  <div className="form-group col-span-2">
+                    <label>
+                      {isJointPlan ? 'Primary Customer (Account Holder 1) *' : 'Select Customer *'}
+                    </label>
                     <div className="customer-search-wrapper" ref={custDropdownRef}>
                       <div className="customer-search-bar">
                         <div className="customer-search-input-wrap">
                           <Search size={16} className="search-icon-modal" />
                           <input
                             type="text"
-                            placeholder="Search by customer name, NIC, or customer ID..."
+                            placeholder={isJointPlan ? "Search for primary customer (Customer 1)..." : "Search by customer name, NIC, or customer ID..."}
                             value={custSearchQuery}
                             onFocus={() => setIsCustDropdownOpen(true)}
                             onChange={(e) => {
@@ -487,6 +553,9 @@ const Accounts = () => {
                                     onClick={() => {
                                       setSelectedCustomerId(String(c.customer_id));
                                       setIsCustDropdownOpen(false);
+                                      if (String(selectedSecondaryCustomerId) === String(c.customer_id)) {
+                                        setSelectedSecondaryCustomerId('');
+                                      }
                                     }}
                                   >
                                     <div className="cust-item-main">
@@ -508,18 +577,20 @@ const Accounts = () => {
                               })
                             ) : (
                               <div className="customer-search-empty">
-                                No customers match "{custSearchQuery}". Try another search term or filter.
+                                No customers match "{custSearchQuery}". Try another search term.
                               </div>
                             )}
                           </div>
                         </div>
                       )}
 
-                      {/* Selected Customer Card */}
+                      {/* Selected Primary Customer Card */}
                       {selectedCustomer && (
                         <div className="selected-customer-card">
                           <div className="selected-customer-details">
-                            <span className="selected-cust-badge">Selected Customer</span>
+                            <span className="selected-cust-badge">
+                              {isJointPlan ? 'Primary Account Holder' : 'Selected Customer'}
+                            </span>
                             <div className="selected-cust-name">
                               <strong>CUST-{String(selectedCustomer.customer_id).padStart(3, '0')}</strong> — {selectedCustomer.full_name}
                             </div>
@@ -540,24 +611,118 @@ const Accounts = () => {
                     </div>
                   </div>
 
-                  {/* Savings Plan Selection */}
-                  <div className="form-group col-span-2">
-                    <label>Select Savings Plan *</label>
-                    <div className="plan-selector">
-                      {plans.map(plan => (
-                        <div
-                          key={plan.plan_id}
-                          className={`plan-option ${Number(selectedPlanId) === plan.plan_id ? 'selected' : ''}`}
-                          onClick={() => handlePlanSelect(plan)}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <strong>{plan.plan_name}</strong>
-                          <span>{plan.interest_rate}%</span>
-                          <span className="plan-option-min">Min: {formatCurrency(plan.minimum_balance)}</span>
+                  {/* Secondary Customer for Joint Account */}
+                  {isJointPlan && (
+                    <div className="form-group col-span-2" style={{ animation: 'fadeInDown 0.2s ease-out' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                        <label style={{ margin: 0 }}>Secondary Customer (Account Holder 2) *</label>
+                        <span style={{ fontSize: '0.75rem', color: '#6366f1', fontWeight: 600 }}>Joint Account Requirement</span>
+                      </div>
+                      <div className="customer-search-wrapper" ref={secCustDropdownRef}>
+                        <div className="customer-search-bar">
+                          <div className="customer-search-input-wrap">
+                            <Search size={16} className="search-icon-modal" />
+                            <input
+                              type="text"
+                              placeholder="Search for secondary customer (Customer 2)..."
+                              value={secondaryCustSearchQuery}
+                              onFocus={() => setIsSecondaryCustDropdownOpen(true)}
+                              onChange={(e) => {
+                                setSecondaryCustSearchQuery(e.target.value);
+                                setIsSecondaryCustDropdownOpen(true);
+                              }}
+                            />
+                            {secondaryCustSearchQuery && (
+                              <button
+                                type="button"
+                                className="clear-search-btn"
+                                onClick={() => {
+                                  setSecondaryCustSearchQuery('');
+                                  setIsSecondaryCustDropdownOpen(true);
+                                }}
+                                title="Clear search"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      ))}
+
+                        {/* Dropdown list showing matching secondary customers */}
+                        {isSecondaryCustDropdownOpen && (
+                          <div className="customer-search-results-popover">
+                            <div className="customer-search-popover-header">
+                              <span>
+                                {secondaryCustSearchQuery
+                                  ? `Matching Customers (${filteredModalSecondaryCustomers.length})`
+                                  : `Available Customers (${filteredModalSecondaryCustomers.length})`}
+                              </span>
+                              <span className="search-popover-hint">Click to select 2nd holder</span>
+                            </div>
+                            <div className="customer-search-results-list">
+                              {filteredModalSecondaryCustomers.length > 0 ? (
+                                filteredModalSecondaryCustomers.map(c => {
+                                  const isSelected = String(selectedSecondaryCustomerId) === String(c.customer_id);
+                                  return (
+                                    <div
+                                      key={c.customer_id}
+                                      className={`customer-search-result-item ${isSelected ? 'selected' : ''}`}
+                                      onClick={() => {
+                                        setSelectedSecondaryCustomerId(String(c.customer_id));
+                                        setIsSecondaryCustDropdownOpen(false);
+                                      }}
+                                    >
+                                      <div className="cust-item-main">
+                                        <div className="cust-item-title">
+                                          <span className="cust-item-id">CUST-{String(c.customer_id).padStart(3, '0')}</span>
+                                          <span className="cust-item-name">{c.full_name}</span>
+                                        </div>
+                                        <div className="cust-item-sub">
+                                          <span>NIC: <strong>{c.national_id || 'N/A'}</strong></span>
+                                          {c.phone && <span>• Tel: {c.phone}</span>}
+                                          {c.customer_type && (
+                                            <span className="cust-item-type-tag">{c.customer_type}</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {isSelected && <Check size={16} className="text-primary" />}
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <div className="customer-search-empty">
+                                  No available customers match "{secondaryCustSearchQuery}".
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Selected Secondary Customer Card */}
+                        {selectedSecondaryCustomer && (
+                          <div className="selected-customer-card" style={{ borderColor: '#a5b4fc', backgroundColor: '#eef2ff' }}>
+                            <div className="selected-customer-details">
+                              <span className="selected-cust-badge" style={{ color: '#4f46e5' }}>Secondary Account Holder</span>
+                              <div className="selected-cust-name">
+                                <strong>CUST-{String(selectedSecondaryCustomer.customer_id).padStart(3, '0')}</strong> — {selectedSecondaryCustomer.full_name}
+                              </div>
+                              <div className="selected-cust-nic">NIC: {selectedSecondaryCustomer.national_id} | Phone: {selectedSecondaryCustomer.phone || '-'}</div>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn-change-cust"
+                              onClick={() => {
+                                setSelectedSecondaryCustomerId('');
+                                setIsSecondaryCustDropdownOpen(true);
+                              }}
+                            >
+                              Change
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Initial Deposit Amount */}
                   <div className="form-group col-span-2">

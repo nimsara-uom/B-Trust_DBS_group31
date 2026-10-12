@@ -51,8 +51,10 @@ class AccountCreate(BaseModel):
     """
     Request body for opening a new savings account (POST /api/accounts).
     The system validates customer age eligibility based on the selected plan.
+    For Joint accounts, a secondary_customer_id can be specified.
     """
     customer_id: int = Field(gt=0, description="Customer ID of the primary account owner")
+    secondary_customer_id: Optional[int] = Field(None, gt=0, description="Customer ID of the secondary account owner (for Joint accounts)")
     plan_id: int = Field(gt=0, description="Plan ID (1=Children, 2=Teen, 3=Adult, 4=Senior, 5=Joint)")
     initial_deposit: Decimal = Field(
         ...,
