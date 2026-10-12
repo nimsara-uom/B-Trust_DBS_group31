@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowUpRight, ArrowDownRight, RefreshCw, Filter, Search, Check, X } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, RefreshCw, Filter, Search, Check, X, Layers, ArrowDownCircle, ArrowUpCircle, Percent } from 'lucide-react';
 import './Transactions.css';
 import { getTransactions, depositMoney, withdrawMoney, getAccounts, getAgents } from '../api';
+
+const TABS = [
+  { id: 'All', label: 'All', icon: Layers },
+  { id: 'Deposits', label: 'Deposits', icon: ArrowUpCircle },
+  { id: 'Withdrawals', label: 'Withdrawals', icon: ArrowDownCircle },
+  { id: 'Interest', label: 'Interest', icon: Percent },
+];
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -192,15 +199,21 @@ const Transactions = () => {
 
       <div className="card table-card">
         <div className="tabs-container">
-          {['All', 'Deposits', 'Withdrawals', 'Interest'].map(tab => (
-            <button
-              key={tab}
-              className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab}
-            </button>
-          ))}
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                className={`tab-btn ${isActive ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <Icon size={16} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="table-toolbar">
