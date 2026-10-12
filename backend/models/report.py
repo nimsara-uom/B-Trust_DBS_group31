@@ -7,9 +7,9 @@ class AgentTransactionSummaryResponse(BaseModel):
     agent_id: int
     agent_name: str
     number_of_transactions: int
-    total_amount: Decimal
-    total_deposits: Decimal
-    total_withdrawals: Decimal
+    total_amount: Decimal = Decimal("0.00")
+    total_deposits: Decimal = Decimal("0.00")
+    total_withdrawals: Decimal = Decimal("0.00")
 
 class AccountTransactionSummaryResponse(BaseModel):
     account_number: str
