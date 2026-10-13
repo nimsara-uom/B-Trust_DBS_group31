@@ -24,3 +24,17 @@ services:
         value: admin
       - key: AUTH_PASSWORD
         sync: false          # Set this manually in Render dashboard
+      - key: BREVO_API_KEY
+        sync: false          # Set this manually in Render dashboard
+      - key: BREVO_SENDER_EMAIL
+        sync: false          # Use a sender address verified in Brevo
+      - key: BREVO_SENDER_NAME
+        value: B-Trust Digital Banking
+      - key: SMTP_SERVER
+        value: smtp-relay.brevo.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_LOGIN
+        sync: false          # Set this manually in Render dashboard
+      - key: SMTP_PASSWORD
+        sync: false          # Set this manually in Render dashboard
