@@ -27,6 +27,10 @@ try:
 except ImportError:
     _BREVO_AVAILABLE = False
 
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,6 +49,42 @@ def _mask_account_number(account_number: str) -> str:
     return masked
 
 
+def _send_via_smtp(
+    to_email: str,
+    subject: str,
+    html_body: str,
+    text_body: str,
+    sender_name: str,
+    sender_email: str,
+) -> bool:
+    """Sends email via standard SMTP (e.g. Brevo SMTP relay). Returns True if successful."""
+    smtp_server = getattr(settings, "SMTP_SERVER", "smtp-relay.brevo.com")
+    smtp_port = getattr(settings, "SMTP_PORT", 587)
+    smtp_login = getattr(settings, "SMTP_LOGIN", "")
+    smtp_password = getattr(settings, "SMTP_PASSWORD", "") or getattr(settings, "BREVO_API_KEY", "")
+
+    if not smtp_login or not smtp_password:
+        return False
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"{sender_name} <{sender_email}>"
+    msg["To"] = to_email
+
+    msg.attach(MIMEText(text_body, "plain"))
+    msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port, timeout=15) as server:
+            server.starttls()
+            server.login(smtp_login, smtp_password)
+            server.send_message(msg)
+        return True
+    except Exception as exc:
+        logger.error("SMTP sending failed: %s", exc)
+        return False
+
+
 def send_transaction_email(
     to_email: str,
     to_name: str,
@@ -54,22 +94,11 @@ def send_transaction_email(
     balance: float,
 ) -> None:
     """
-    Sends a transaction alert email via Brevo.
-    Silently skips (logs a warning) if:
-      - BREVO_API_KEY is not configured.
-      - to_email is empty / None.
+    Sends a transaction alert email via Brevo (SMTP or HTTP API).
     """
     api_key = settings.BREVO_API_KEY
     sender_email = settings.BREVO_SENDER_EMAIL
     sender_name = settings.BREVO_SENDER_NAME
-
-    if not _BREVO_AVAILABLE:
-        logger.warning("sib-api-v3-sdk not installed — skipping transaction email.")
-        return
-
-    if not api_key:
-        logger.warning("BREVO_API_KEY not set — skipping transaction email.")
-        return
 
     if not to_email or not to_email.strip():
         logger.info("Customer has no email address — skipping transaction email.")
@@ -117,30 +146,48 @@ def send_transaction_email(
     </html>
     """
 
-    # --- Brevo API configuration ---
-    configuration = sib_api_v3_sdk.Configuration()
-    configuration.api_key["api-key"] = api_key
-
-    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
-        sib_api_v3_sdk.ApiClient(configuration)
-    )
-
-    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-        sender={"name": sender_name, "email": sender_email},
-        to=[{"email": to_email, "name": to_name}],
-        subject=subject,
-        html_content=html_body,
-        text_content=text_body,
-    )
-
-    try:
-        api_instance.send_transac_email(send_smtp_email)
-        logger.info(
-            "Transaction email sent to %s (%s, Rs %.2f)",
-            to_email, transaction_type, amount
+    # 1. Prefer SMTP relay if configured (matches Brevo SMTP credentials: xsmtpsib-...)
+    if getattr(settings, "SMTP_LOGIN", None):
+        success = _send_via_smtp(
+            to_email=to_email,
+            subject=subject,
+            html_body=html_body,
+            text_body=text_body,
+            sender_name=sender_name,
+            sender_email=sender_email,
         )
-    except ApiException as exc:
-        # Log but do not fail the main transaction request
-        logger.error("Brevo API error while sending email: %s", exc)
-    except Exception as exc:
-        logger.error("Unexpected error while sending transaction email: %s", exc)
+        if success:
+            logger.info(
+                "Transaction alert sent via SMTP to %s (%s, Rs %.2f)",
+                to_email, transaction_type, amount
+            )
+            return
+
+    # 2. Fallback to Brevo HTTP API SDK if api-key is available
+    if _BREVO_AVAILABLE and api_key:
+        try:
+            configuration = sib_api_v3_sdk.Configuration()
+            configuration.api_key["api-key"] = api_key
+            api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
+                sib_api_v3_sdk.ApiClient(configuration)
+            )
+            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                sender={"name": sender_name, "email": sender_email},
+                to=[{"email": to_email, "name": to_name}],
+                subject=subject,
+                html_content=html_body,
+                text_content=text_body,
+            )
+            api_instance.send_transac_email(send_smtp_email)
+            logger.info(
+                "Transaction email sent via Brevo API to %s (%s, Rs %.2f)",
+                to_email, transaction_type, amount
+            )
+            return
+        except ApiException as exc:
+            logger.error("Brevo API error while sending email: %s", exc)
+        except Exception as exc:
+            logger.error("Unexpected error while sending transaction email: %s", exc)
+    else:
+        logger.warning("No working email configuration (SMTP or Brevo API key) found.")
+

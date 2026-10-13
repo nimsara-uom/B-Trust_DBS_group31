@@ -29,6 +29,7 @@ def list_fixed_deposits(
 ):
     cursor, conn = db
     try:
+        crud_fd.process_auto_due_interest(cursor, conn)
         fds = crud_fd.get_fixed_deposits(cursor, status = status, account_id = account_id)
         return fds
     except Error as e:

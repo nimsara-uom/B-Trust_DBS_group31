@@ -66,6 +66,42 @@ BEGIN
 END$$
 
 
+-- Block FD creation for Children plan accounts
+CREATE TRIGGER trg_fd_no_children_insert
+BEFORE INSERT ON FIXEDDEPOSIT
+FOR EACH ROW
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM SAVINGSACCOUNT sa
+        JOIN SAVINGSPLAN sp ON sp.plan_id = sa.plan_id
+        WHERE sa.account_id = NEW.account_id
+          AND LOWER(sp.plan_name) = 'children'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Children savings accounts cannot open a Fixed Deposit';
+    END IF;
+END$$
+
+
+-- Same rule if someone updates account_id to a Children account
+CREATE TRIGGER trg_fd_no_children_update
+BEFORE UPDATE ON FIXEDDEPOSIT
+FOR EACH ROW
+BEGIN
+    IF NEW.account_id <> OLD.account_id AND EXISTS (
+        SELECT 1
+        FROM SAVINGSACCOUNT sa
+        JOIN SAVINGSPLAN sp ON sp.plan_id = sa.plan_id
+        WHERE sa.account_id = NEW.account_id
+          AND LOWER(sp.plan_name) = 'children'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Children savings accounts cannot open a Fixed Deposit';
+    END IF;
+END$$
+
+
 DELIMITER ;
 
 

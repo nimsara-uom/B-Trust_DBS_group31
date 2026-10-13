@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, Filter, MoreVertical, Eye, RefreshCw } from 'lucide-react';
 import './Customers.css';
 import { getCustomers, createCustomer, getBranches, getAgents } from '../api';
+import { useToast } from '../ToastContext';
 
 const Customers = () => {
+  const { showToast, showAlert } = useToast();
   const [customers, setCustomers] = useState([]);
   const [branches, setBranches] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -78,7 +80,7 @@ const Customers = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.full_name || !formData.national_id || !formData.dob || !formData.phone || !formData.branch_id || !formData.agent_id) {
-      alert('Please fill in all required fields.');
+      showAlert('Please fill in all required fields.', 'Validation Error');
       return;
     }
 
@@ -91,6 +93,7 @@ const Customers = () => {
         agent_id: parseInt(formData.agent_id),
       });
       setFormSuccess('Customer registered successfully!');
+      showToast('Customer registered successfully!', 'success');
       setTimeout(() => {
         setIsModalOpen(false);
         setFormSuccess(null);
@@ -98,7 +101,7 @@ const Customers = () => {
       loadCustomers(search);
     } catch (err) {
       console.error('Error creating customer:', err);
-      alert(err.response?.data?.detail || 'Failed to register customer.');
+      showAlert(err.response?.data?.detail || 'Failed to register customer.', 'Registration Failed');
     } finally {
       setSubmitting(false);
     }

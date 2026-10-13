@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Clock, Percent, ShieldCheck, RefreshCw, Search, X, RotateCcw, Check, ChevronDown, Lock } from 'lucide-react';
 import './FixedDeposits.css';
 import { getFDPlans, getFixedDeposits, getAccounts, getAgents, createFixedDeposit, closeFixedDeposit } from '../api';
+import { useToast } from '../ToastContext';
 
 const ICONS = [Clock, Percent, ShieldCheck];
 const COLORS = ['blue', 'purple', 'green'];
 
 const FixedDeposits = () => {
+  const { showToast, showAlert, showConfirm } = useToast();
   const [fdPlans, setFdPlans] = useState([]);
   const [fixedDeposits, setFixedDeposits] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -100,22 +102,22 @@ const FixedDeposits = () => {
   const handleConfirmCloseFD = async (e) => {
     e.preventDefault();
     if (!closingFD) {
-      alert('Please search and select the Fixed Deposit to close.');
+      showAlert('Please search and select the Fixed Deposit to close.', 'Validation Error');
       return;
     }
     if (!closingAgentId) {
-      alert('Please select an authorizing agent.');
+      showAlert('Please select an authorizing agent.', 'Validation Error');
       return;
     }
     if (!closingReason.trim()) {
-      alert('Please enter a reason for closing the Fixed Deposit.');
+      showAlert('Please enter a reason for closing the Fixed Deposit.', 'Validation Error');
       return;
     }
 
     try {
       setCloseSubmitting(true);
       await closeFixedDeposit(closingFD.fd_id);
-      alert(`Fixed Deposit FD-${String(closingFD.fd_id).padStart(4, '0')} closed successfully.\nPrincipal of ${formatCurrency(closingFD.principal_amount)} returned to linked account #${closingFD.account_id}.\nReason: ${closingReason}`);
+      showToast(`Fixed Deposit FD-${String(closingFD.fd_id).padStart(4, '0')} closed successfully. Principal of ${formatCurrency(closingFD.principal_amount)} returned to linked account #${closingFD.account_id}.`, 'success');
       setIsCloseModalOpen(false);
       setClosingFD(null);
       setFdCloseSearchQuery('');
@@ -123,7 +125,7 @@ const FixedDeposits = () => {
       loadData();
     } catch (err) {
       console.error('Error closing FD:', err);
-      alert(err.response?.data?.detail || 'Failed to close fixed deposit.');
+      showAlert(err.response?.data?.detail || 'Failed to close fixed deposit.', 'Failed to Close FD');
     } finally {
       setCloseSubmitting(false);
     }
@@ -144,17 +146,17 @@ const FixedDeposits = () => {
   const handleCreateFD = async (e) => {
     e.preventDefault();
     if (!selectedAccountId) {
-      alert('Please select a savings account to link.');
+      showAlert('Please select a savings account to link.', 'Validation Error');
       return;
     }
     if (!selectedPlanId || !principalAmount) {
-      alert('Please fill in all required fields.');
+      showAlert('Please fill in all required fields.', 'Validation Error');
       return;
     }
 
     const principal = parseFloat(principalAmount);
     if (isNaN(principal) || principal <= 0) {
-      alert('Please enter a valid principal deposit amount.');
+      showAlert('Please enter a valid principal deposit amount.', 'Validation Error');
       return;
     }
 
@@ -166,6 +168,7 @@ const FixedDeposits = () => {
         principal_amount: principal
       });
       setFormSuccess('Fixed deposit created successfully! Funds transferred from savings account.');
+      showToast('Fixed deposit created successfully!', 'success');
       setTimeout(() => {
         setIsModalOpen(false);
         setFormSuccess(null);
@@ -175,7 +178,7 @@ const FixedDeposits = () => {
       loadData();
     } catch (err) {
       console.error('Error creating FD:', err);
-      alert(err.response?.data?.detail || 'Failed to create fixed deposit.');
+      showAlert(err.response?.data?.detail || 'Failed to create fixed deposit.', 'Cannot Create Fixed Deposit');
     } finally {
       setSubmitting(false);
     }
@@ -183,18 +186,19 @@ const FixedDeposits = () => {
 
   const handleCloseFD = async (fd) => {
     const confirmMsg = `Are you sure you want to close FD-${String(fd.fd_id).padStart(4, '0')}? Principal of ${formatCurrency(fd.principal_amount)} will be deposited back to linked savings account (#${fd.account_id}).`;
-    if (!window.confirm(confirmMsg)) {
+    const confirmed = await showConfirm(confirmMsg, 'Confirm Closing Fixed Deposit');
+    if (!confirmed) {
       return;
     }
 
     try {
       setLoading(true);
       await closeFixedDeposit(fd.fd_id);
-      alert(`Fixed Deposit FD-${String(fd.fd_id).padStart(4, '0')} closed successfully. Principal returned to account #${fd.account_id}.`);
+      showToast(`Fixed Deposit FD-${String(fd.fd_id).padStart(4, '0')} closed successfully. Principal returned to account #${fd.account_id}.`, 'success');
       loadData();
     } catch (err) {
       console.error('Error closing FD:', err);
-      alert(err.response?.data?.detail || 'Failed to close fixed deposit.');
+      showAlert(err.response?.data?.detail || 'Failed to close fixed deposit.', 'Error Closing FD');
     } finally {
       setLoading(false);
     }
@@ -238,8 +242,11 @@ const FixedDeposits = () => {
     return true;
   });
 
-  // Filter accounts for modal linking
+  // Filter accounts for modal linking (Children accounts are not eligible for Fixed Deposits)
   const filteredModalAccounts = accounts.filter(acc => {
+    const planName = (acc.plan_name || '').toLowerCase();
+    if (planName === 'children') return false;
+
     if (!accountSearchQuery.trim()) return true;
     const q = accountSearchQuery.toLowerCase().trim();
     const accNo = (acc.account_number || '').toLowerCase();
