@@ -143,12 +143,12 @@ BEGIN
                 CONCAT(p_RunDate, ' 00:01:00')
             );
 
-            -- 9. ADVANCE NEXT INTEREST DATE (+30 DAYS)
+            -- 9. ADVANCE NEXT INTEREST DATE (+1 MONTH)
             -- Member 3's trigger 'trg_fd_maturity_check' will automatically
             -- flip status='Matured' if next_interest_date >= maturity_date.
 
             UPDATE FIXEDDEPOSIT
-            SET next_interest_date = DATE_ADD(v_next_interest_date, INTERVAL 30 DAY)
+            SET next_interest_date = DATE_ADD(v_next_interest_date, INTERVAL 1 MONTH)
             WHERE fd_id = v_fd_id;
 
             -- Increment counters
