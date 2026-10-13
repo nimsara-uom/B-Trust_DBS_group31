@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileBarChart, Download, Eye, Users, Wallet, Activity, X } from 'lucide-react';
 import './Reports.css';
+import { useToast } from '../ToastContext';
 import {
   getAgentTransactionSummary,
   getAccountTransactionSummary,
@@ -62,6 +63,7 @@ const REPORTS = [
 ];
 
 const Reports = () => {
+  const { showToast, showAlert } = useToast();
   const [activeReport, setActiveReport] = useState(null);
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -89,7 +91,7 @@ const Reports = () => {
       const res = await report.fetcher();
       const data = res.data || [];
       if (data.length === 0) {
-        alert('No data available to export.');
+        showAlert('No data available to export.', 'Export Notice');
         return;
       }
 
@@ -113,9 +115,10 @@ const Reports = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      showToast(`${report.title} exported successfully!`, 'success');
     } catch (err) {
       console.error('Export error:', err);
-      alert('Failed to export CSV.');
+      showAlert('Failed to export CSV.', 'Export Error');
     }
   };
 

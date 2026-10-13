@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownRight, RefreshCw, Filter, Search, Check, X, Layers, ArrowDownCircle, ArrowUpCircle, Percent } from 'lucide-react';
 import './Transactions.css';
 import { getTransactions, depositMoney, withdrawMoney, getAccounts, getAgents } from '../api';
+import { useToast } from '../ToastContext';
 
 const TABS = [
   { id: 'All', label: 'All', icon: Layers },
@@ -11,6 +12,7 @@ const TABS = [
 ];
 
 const Transactions = () => {
+  const { showToast, showAlert } = useToast();
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -86,7 +88,7 @@ const Transactions = () => {
   const handleDeposit = async (e) => {
     e.preventDefault();
     if (!selectedAccountId || !selectedAgentId || !amount || !refNo) {
-      alert('Please fill in all fields.');
+      showAlert('Please fill in all fields.', 'Validation Error');
       return;
     }
 
@@ -98,11 +100,12 @@ const Transactions = () => {
         amount: parseFloat(amount),
         reference_no: refNo.trim()
       });
+      showToast(`Deposit of Rs. ${parseFloat(amount).toLocaleString('en-LK')} processed successfully!`, 'success');
       setIsDepositModalOpen(false);
       loadTransactions();
     } catch (err) {
       console.error('Deposit error:', err);
-      alert(err.response?.data?.detail || 'Failed to process deposit.');
+      showAlert(err.response?.data?.detail || 'Failed to process deposit.', 'Deposit Failed');
     } finally {
       setSubmitting(false);
     }
@@ -111,7 +114,7 @@ const Transactions = () => {
   const handleWithdraw = async (e) => {
     e.preventDefault();
     if (!selectedAccountId || !selectedAgentId || !amount || !refNo) {
-      alert('Please fill in all fields.');
+      showAlert('Please fill in all fields.', 'Validation Error');
       return;
     }
 
@@ -123,11 +126,12 @@ const Transactions = () => {
         amount: parseFloat(amount),
         reference_no: refNo.trim()
       });
+      showToast(`Withdrawal of Rs. ${parseFloat(amount).toLocaleString('en-LK')} processed successfully!`, 'success');
       setIsWithdrawModalOpen(false);
       loadTransactions();
     } catch (err) {
       console.error('Withdrawal error:', err);
-      alert(err.response?.data?.detail || 'Failed to process withdrawal.');
+      showAlert(err.response?.data?.detail || 'Failed to process withdrawal.', 'Withdrawal Failed');
     } finally {
       setSubmitting(false);
     }

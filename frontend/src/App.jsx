@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
+import { ToastProvider } from './ToastContext';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -107,36 +108,38 @@ const ProtectedCustomerLayout = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Landing Page with Hero Section & Login */}
-          <Route path="/" element={<Landing />} />
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Landing Page with Hero Section & Login */}
+            <Route path="/" element={<Landing />} />
 
-          {/* Customer Self-Service Portal */}
-          <Route 
-            path="/portal" 
-            element={
-              <ProtectedCustomerLayout>
-                <CustomerPortal />
-              </ProtectedCustomerLayout>
-            } 
-          />
+            {/* Customer Self-Service Portal */}
+            <Route 
+              path="/portal" 
+              element={
+                <ProtectedCustomerLayout>
+                  <CustomerPortal />
+                </ProtectedCustomerLayout>
+              } 
+            />
 
-          {/* Protected Dashboard & Functional Banking Pages */}
-          <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
-          <Route path="/transactions" element={<ProtectedLayout><Transactions /></ProtectedLayout>} />
-          <Route path="/accounts" element={<ProtectedLayout><Accounts /></ProtectedLayout>} />
-          <Route path="/fixed-deposits" element={<ProtectedLayout><FixedDeposits /></ProtectedLayout>} />
-          <Route path="/interest" element={<ProtectedLayout><InterestManagement /></ProtectedLayout>} />
-          <Route path="/reports" element={<ProtectedLayout><Reports /></ProtectedLayout>} />
-          <Route path="/customers" element={<ProtectedLayout><Customers /></ProtectedLayout>} />
-          <Route path="/agents" element={<ProtectedLayout><Agents /></ProtectedLayout>} />
-          <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
+            {/* Protected Dashboard & Functional Banking Pages */}
+            <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
+            <Route path="/transactions" element={<ProtectedLayout><Transactions /></ProtectedLayout>} />
+            <Route path="/accounts" element={<ProtectedLayout><Accounts /></ProtectedLayout>} />
+            <Route path="/fixed-deposits" element={<ProtectedLayout><FixedDeposits /></ProtectedLayout>} />
+            <Route path="/interest" element={<ProtectedLayout><InterestManagement /></ProtectedLayout>} />
+            <Route path="/reports" element={<ProtectedLayout><Reports /></ProtectedLayout>} />
+            <Route path="/customers" element={<ProtectedLayout><Customers /></ProtectedLayout>} />
+            <Route path="/agents" element={<ProtectedLayout><Agents /></ProtectedLayout>} />
+            <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
 
-          {/* Catch-all redirect to Landing */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+            {/* Catch-all redirect to Landing */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   );
 }

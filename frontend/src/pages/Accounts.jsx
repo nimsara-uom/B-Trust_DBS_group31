@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Wallet, Plus, ShieldCheck, UserCircle, Users, RefreshCw, Search, X, RotateCcw, Check, ChevronDown } from 'lucide-react';
 import './Accounts.css';
 import { getPlans, getAccounts, getCustomers, getAgents, createAccount, updateAccountStatus } from '../api';
+import { useToast } from '../ToastContext';
 
 const PLAN_ICONS = {
   Children: ShieldCheck,
@@ -20,6 +21,7 @@ const PLAN_COLORS = {
 };
 
 const Accounts = () => {
+  const { showToast, showAlert, showConfirm } = useToast();
   const [plans, setPlans] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -123,22 +125,22 @@ const Accounts = () => {
   const handleConfirmCloseAccount = async (e) => {
     e.preventDefault();
     if (!closingAccount) {
-      alert('Please search and select the savings account to close.');
+      showAlert('Please search and select the savings account to close.', 'Validation Error');
       return;
     }
     if (!closingAgentId) {
-      alert('Please select an authorized agent.');
+      showAlert('Please select an authorized agent.', 'Validation Error');
       return;
     }
     if (!closingReason.trim()) {
-      alert('Please provide a reason for closing the account.');
+      showAlert('Please provide a reason for closing the account.', 'Validation Error');
       return;
     }
 
     try {
       setCloseSubmitting(true);
       await updateAccountStatus(closingAccount.account_id, 'Closed');
-      alert(`Account ${closingAccount.account_number} closed successfully.\nReason: ${closingReason}`);
+      showToast(`Account ${closingAccount.account_number} closed successfully.`, 'success');
       setIsCloseModalOpen(false);
       setClosingAccount(null);
       setAccountCloseSearchQuery('');
@@ -147,7 +149,7 @@ const Accounts = () => {
       setAccounts(accRes.data || []);
     } catch (err) {
       console.error('Failed to close account:', err);
-      alert(err.response?.data?.detail || 'Failed to close account.');
+      showAlert(err.response?.data?.detail || 'Failed to close account.', 'Cannot Close Account');
     } finally {
       setCloseSubmitting(false);
     }
@@ -211,11 +213,11 @@ const Accounts = () => {
   const handleCreateAccount = async (e) => {
     e.preventDefault();
     if (!selectedCustomerId) {
-      alert('Please select a primary customer.');
+      showAlert('Please select a primary customer.', 'Validation Error');
       return;
     }
     if (!selectedPlanId) {
-      alert('Please select a savings plan.');
+      showAlert('Please select a savings plan.', 'Validation Error');
       return;
     }
 
@@ -225,22 +227,22 @@ const Accounts = () => {
 
     if (isJoint) {
       if (!selectedSecondaryCustomerId) {
-        alert('Joint accounts require two customers. Please select a secondary customer.');
+        showAlert('Joint accounts require two customers. Please select a secondary customer.', 'Validation Error');
         return;
       }
       if (String(selectedSecondaryCustomerId) === String(selectedCustomerId)) {
-        alert('Primary and secondary account holders cannot be the same customer. Please select two different customers.');
+        showAlert('Primary and secondary account holders cannot be the same customer. Please select two different customers.', 'Validation Error');
         return;
       }
     }
 
     if (isChildren) {
       if (!selectedSecondaryCustomerId) {
-        alert('Children savings accounts require a parent or legal guardian. Please select an adult parent/guardian.');
+        showAlert('Children savings accounts require a parent or legal guardian. Please select an adult parent/guardian.', 'Validation Error');
         return;
       }
       if (String(selectedSecondaryCustomerId) === String(selectedCustomerId)) {
-        alert('Child and parent/guardian cannot be the same person. Please select a different customer as parent/guardian.');
+        showAlert('Child and parent/guardian cannot be the same person. Please select a different customer as parent/guardian.', 'Validation Error');
         return;
       }
     }
@@ -249,7 +251,7 @@ const Accounts = () => {
     const depositAmount = parseFloat(initialDeposit);
 
     if (initialDeposit === '' || isNaN(depositAmount) || depositAmount < minBal) {
-      alert(`Initial deposit cannot be less than the minimum balance requirement of ${formatCurrency(minBal)}.`);
+      showAlert(`Initial deposit cannot be less than the minimum balance requirement of ${formatCurrency(minBal)}.`, 'Validation Error');
       setInitialDeposit(minBal.toString());
       return;
     }
@@ -265,6 +267,7 @@ const Accounts = () => {
       });
 
       setFormSuccess('Savings account created successfully!');
+      showToast('Savings account created successfully!', 'success');
       setTimeout(() => {
         setIsModalOpen(false);
         setFormSuccess(null);
@@ -277,7 +280,7 @@ const Accounts = () => {
       setAccounts(accRes.data || []);
     } catch (err) {
       console.error('Failed to create account:', err);
-      alert(err.response?.data?.detail || 'Failed to create savings account.');
+      showAlert(err.response?.data?.detail || 'Failed to create savings account.', 'Creation Failed');
     } finally {
       setSubmitting(false);
     }
@@ -285,19 +288,20 @@ const Accounts = () => {
 
   const handleCloseAccount = async (account) => {
     const confirmMsg = `Are you sure you want to close account ${account.account_number} (${account.customer_name || 'Holder'}) with current balance of ${formatCurrency(account.current_balance)}?`;
-    if (!window.confirm(confirmMsg)) {
+    const confirmed = await showConfirm(confirmMsg, 'Confirm Account Closure');
+    if (!confirmed) {
       return;
     }
 
     try {
       setLoading(true);
       await updateAccountStatus(account.account_id, 'Closed');
-      alert(`Account ${account.account_number} has been closed successfully.`);
+      showToast(`Account ${account.account_number} has been closed successfully.`, 'success');
       const accRes = await getAccounts();
       setAccounts(accRes.data || []);
     } catch (err) {
       console.error('Failed to close account:', err);
-      alert(err.response?.data?.detail || 'Failed to close account.');
+      showAlert(err.response?.data?.detail || 'Failed to close account.', 'Error');
     } finally {
       setLoading(false);
     }
