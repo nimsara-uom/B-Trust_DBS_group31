@@ -188,9 +188,13 @@ const Reports = () => {
                         <tr key={idx}>
                           {Object.keys(reportData[0]).map(col => (
                             <td key={col}>
-                              {typeof row[col] === 'number'
+                              {row[col] === null || row[col] === undefined
+                                ? '-'
+                                : /year|month|_id|id$/i.test(col)
+                                ? String(row[col])
+                                : typeof row[col] === 'number'
                                 ? row[col].toLocaleString()
-                                : String(row[col] ?? '-')}
+                                : String(row[col])}
                             </td>
                           ))}
                         </tr>
