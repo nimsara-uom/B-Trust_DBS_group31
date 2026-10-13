@@ -89,7 +89,8 @@ def create_fixed_deposit(cursor, data):
             sa.account_id,
             sa.status,
             sa.current_balance,
-            sp.minimum_balance
+            sp.minimum_balance,
+            sp.plan_name
         FROM SAVINGSACCOUNT sa
         JOIN SAVINGSPLAN sp ON sa.plan_id = sp.plan_id
         WHERE sa.account_id = %s
@@ -104,6 +105,9 @@ def create_fixed_deposit(cursor, data):
 
     if account["status"] != "Active":
         raise ValueError(f"Savings account is not active (current status: {account['status']}).")
+
+    if (account.get("plan_name") or "").strip().lower() == "children":
+        raise ValueError("Children savings accounts cannot open a Fixed Deposit.")
 
     current_balance = account["current_balance"]
     minimum_balance = account["minimum_balance"]

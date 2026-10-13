@@ -238,8 +238,11 @@ const FixedDeposits = () => {
     return true;
   });
 
-  // Filter accounts for modal linking
+  // Filter accounts for modal linking (Children accounts are not eligible for Fixed Deposits)
   const filteredModalAccounts = accounts.filter(acc => {
+    const planName = (acc.plan_name || '').toLowerCase();
+    if (planName === 'children') return false;
+
     if (!accountSearchQuery.trim()) return true;
     const q = accountSearchQuery.toLowerCase().trim();
     const accNo = (acc.account_number || '').toLowerCase();
