@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS CUSTOMER (
     agent_id INT NOT NULL, 
     full_name VARCHAR(150) NOT NULL,
     dob DATE NOT NULL, 
-    national_id VARCHAR(20) NOT NULL,
+    national_id VARCHAR(20) NOT NULL, -- National Identity Card (NIC) for adults, or Birth Certificate Registration Number for minors
     phone VARCHAR(15) NOT NULL,
     email VARCHAR(100) , 
     customer_type ENUM('Individual', 'Joint') NOT NULL DEFAULT 'Individual',

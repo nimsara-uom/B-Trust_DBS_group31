@@ -13,6 +13,7 @@ const Customers = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [formSuccess, setFormSuccess] = useState(null);
+  const [ageCategory, setAgeCategory] = useState('Adult'); // 'Adult' or 'Minor'
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -103,13 +104,27 @@ const Customers = () => {
     }
   };
 
+  const handleOpenModal = () => {
+    setAgeCategory('Adult');
+    setFormData(prev => ({
+      ...prev,
+      full_name: '',
+      national_id: '',
+      dob: '',
+      phone: '',
+      email: '',
+      customer_type: 'Individual'
+    }));
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
           <h2>Customers</h2>
         </div>
-        <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+        <button className="btn-primary" onClick={handleOpenModal}>
           <Plus size={18} /> Register Customer
         </button>
       </div>
@@ -126,7 +141,7 @@ const Customers = () => {
             <Search size={18} className="text-muted" />
             <input
               type="text"
-              placeholder="Search customers by name, NIC or phone..."
+              placeholder="Search customers by name, NIC / Birth Cert or phone..."
               value={search}
               onChange={handleSearchChange}
             />
@@ -142,7 +157,7 @@ const Customers = () => {
               <tr>
                 <th>Customer ID</th>
                 <th>Full Name</th>
-                <th>NIC</th>
+                <th>NIC / Birth Cert</th>
                 <th>Phone</th>
                 <th>Branch</th>
                 <th>Agent</th>
@@ -205,27 +220,82 @@ const Customers = () => {
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <div className="form-grid">
+                  {/* Customer Age Category Selector */}
+                  <div className="form-group col-span-2">
+                    <label>Customer Category *</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setAgeCategory('Adult')}
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: '8px',
+                          border: ageCategory === 'Adult' ? '2px solid #4F46E5' : '1px solid #D1D5DB',
+                          backgroundColor: ageCategory === 'Adult' ? '#EEF2FF' : '#FFFFFF',
+                          color: ageCategory === 'Adult' ? '#4338CA' : '#4B5563',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <span>Adult (Age 16+)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAgeCategory('Minor')}
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: '8px',
+                          border: ageCategory === 'Minor' ? '2px solid #4F46E5' : '1px solid #D1D5DB',
+                          backgroundColor: ageCategory === 'Minor' ? '#EEF2FF' : '#FFFFFF',
+                          color: ageCategory === 'Minor' ? '#4338CA' : '#4B5563',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <span>Minor(Under 16)</span>
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="form-group col-span-2">
                     <label>Full Name *</label>
                     <input
                       type="text"
                       name="full_name"
                       required
-                      placeholder="e.g. Nimal Perera"
+                      placeholder={ageCategory === 'Minor' ? "e.g. Master / Miss Chamari De Silva" : "e.g. Nimal Perera"}
                       value={formData.full_name}
                       onChange={handleInputChange}
                     />
                   </div>
+
                   <div className="form-group">
-                    <label>NIC Number *</label>
+                    <label>
+                      {ageCategory === 'Minor' ? 'Birth Certificate No. *' : 'NIC Number *'}
+                    </label>
                     <input
                       type="text"
                       name="national_id"
                       required
-                      placeholder="e.g. 199012345678"
+                      placeholder={
+                        ageCategory === 'Minor'
+                          ? "e.g. 201919600033"
+                          : "e.g. 199012345678 "
+                      }
                       value={formData.national_id}
                       onChange={handleInputChange}
                     />
+
                   </div>
                   <div className="form-group">
                     <label>Date of Birth *</label>

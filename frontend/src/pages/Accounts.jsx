@@ -564,7 +564,7 @@ const Accounts = () => {
                                         <span className="cust-item-name">{c.full_name}</span>
                                       </div>
                                       <div className="cust-item-sub">
-                                        <span>NIC: <strong>{c.national_id || 'N/A'}</strong></span>
+                                        <span>NIC / Birth Cert: <strong>{c.national_id || 'N/A'}</strong></span>
                                         {c.phone && <span>• Tel: {c.phone}</span>}
                                         {c.customer_type && (
                                           <span className="cust-item-type-tag">{c.customer_type}</span>
