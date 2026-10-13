@@ -259,18 +259,6 @@ const Accounts = () => {
     return true;
   });
 
-  const filteredModalCustomers = customers.filter(c => {
-    if (!custSearchQuery.trim()) return true;
-    const q = custSearchQuery.toLowerCase().trim();
-    const nameMatch = (c.full_name || '').toLowerCase().includes(q);
-    const idFormatted = `cust-${String(c.customer_id).padStart(3, '0')}`.toLowerCase();
-    const idRaw = String(c.customer_id);
-    const idMatch = idFormatted.includes(q) || idRaw.includes(q);
-    const nicMatch = (c.national_id || '').toLowerCase().includes(q);
-
-    return nameMatch || idMatch || nicMatch;
-  });
-
   const calculateAgeFromDob = (dobStr) => {
     if (!dobStr) return 0;
     const dob = new Date(dobStr);
@@ -290,13 +278,53 @@ const Accounts = () => {
   const isChildrenPlan = selectedPlan && selectedPlan.plan_name === 'Children';
   const minRequiredBalance = selectedPlan ? Number(selectedPlan.minimum_balance || 0) : 0;
 
+  const filteredModalCustomers = customers.filter(c => {
+    const age = calculateAgeFromDob(c.dob);
+
+    // Filter primary customer based on the selected savings plan criteria:
+    if (selectedPlan) {
+      if (selectedPlan.plan_name === 'Children') {
+        // Only children (under 13 years)
+        if (age >= 13) return false;
+      } else if (selectedPlan.plan_name === 'Teen') {
+        // Teenagers (13 to 17 years)
+        if (age < 13 || age > 17) return false;
+      } else if (selectedPlan.plan_name === 'Adult') {
+        // Adults (18 to 59 years)
+        if (age < 18 || age > 59) return false;
+      } else if (selectedPlan.plan_name === 'Senior') {
+        // Seniors (60 years and above)
+        if (age < 60) return false;
+      } else if (selectedPlan.plan_name === 'Joint') {
+        // Joint primary holder must be an adult (age >= 18)
+        if (age < 18) return false;
+      }
+    }
+
+    if (!custSearchQuery.trim()) return true;
+    const q = custSearchQuery.toLowerCase().trim();
+    const nameMatch = (c.full_name || '').toLowerCase().includes(q);
+    const idFormatted = `cust-${String(c.customer_id).padStart(3, '0')}`.toLowerCase();
+    const idRaw = String(c.customer_id);
+    const idMatch = idFormatted.includes(q) || idRaw.includes(q);
+    const nicMatch = (c.national_id || '').toLowerCase().includes(q);
+
+    return nameMatch || idMatch || nicMatch;
+  });
+
   const filteredModalSecondaryCustomers = customers.filter(c => {
     // Avoid listing the already selected primary customer
     if (String(c.customer_id) === String(selectedCustomerId)) return false;
 
+    const age = calculateAgeFromDob(c.dob);
+
     // For Children savings plan, guardian must be an adult (age >= 18)
     if (isChildrenPlan) {
-      const age = calculateAgeFromDob(c.dob);
+      if (age < 18) return false;
+    }
+
+    // For Joint accounts, secondary holder must also be an adult (age >= 18)
+    if (isJointPlan) {
       if (age < 18) return false;
     }
 
@@ -513,23 +541,41 @@ const Accounts = () => {
             <form onSubmit={handleCreateAccount}>
               <div className="modal-body">
                 <div className="form-grid">
-                  {/* Savings Plan Selection */}
+                  {/* Savings Plan Selection Dropdown */}
                   <div className="form-group col-span-2">
                     <label>Select Savings Plan *</label>
-                    <div className="plan-selector">
+                    <select
+                      value={selectedPlanId}
+                      onChange={(e) => {
+                        const planId = e.target.value;
+                        const plan = plans.find(p => String(p.plan_id) === String(planId));
+                        if (plan) {
+                          handlePlanSelect(plan);
+                        } else {
+                          setSelectedPlanId('');
+                          setSelectedCustomerId('');
+                          setSelectedSecondaryCustomerId('');
+                          setInitialDeposit('');
+                        }
+                      }}
+                      required
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '0.95rem',
+                        fontWeight: 500,
+                        backgroundColor: '#fff',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="">-- Choose a Savings Plan --</option>
                       {plans.map(plan => (
-                        <div
-                          key={plan.plan_id}
-                          className={`plan-option ${Number(selectedPlanId) === plan.plan_id ? 'selected' : ''}`}
-                          onClick={() => handlePlanSelect(plan)}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <strong>{plan.plan_name}</strong>
-                          <span>{plan.interest_rate}%</span>
-                          <span className="plan-option-min">Min: {formatCurrency(plan.minimum_balance)}</span>
-                        </div>
+                        <option key={plan.plan_id} value={plan.plan_id}>
+                          {plan.plan_name}
+                        </option>
                       ))}
-                    </div>
+                    </select>
                   </div>
 
                   {/* Customer 1 (Primary Account Holder / Child) */}
