@@ -252,6 +252,38 @@ def run_monthly_engine(cursor, p_RunDate, p_SystemAgentID):
         "message": "Monthly interest engine executed successfully."
     }
 
+def process_auto_due_interest(cursor, conn):
+    """
+    Automatically checks and calculates monthly interest for active Fixed Deposits
+    whose next_interest_date has arrived (<= today's date).
+    For each account opened (e.g. opened 2026/10/13), interest is automatically calculated
+    when reaching its monthly date (e.g. 2026/11/13).
+    """
+    today = date.today()
+    max_cycles = 60
+    cycle = 0
+    total_processed = 0
+
+    while cycle < max_cycles:
+        cursor.execute("""
+            SELECT COUNT(*) AS due_count
+            FROM FIXEDDEPOSIT fd
+            JOIN SAVINGSACCOUNT sa ON fd.account_id = sa.account_id
+            WHERE fd.status = 'Active'
+              AND sa.status = 'Active'
+              AND fd.next_interest_date <= %s
+        """, (today,))
+        row = cursor.fetchone()
+        if not row or row.get("due_count", 0) == 0:
+            break
+
+        run_monthly_engine(cursor, today, 1)
+        conn.commit()
+        total_processed += row.get("due_count", 0)
+        cycle += 1
+
+    return total_processed
+
 #close fixed deposit and credit principal back to linked savings account
 def close_fixed_deposit(cursor, fd_id: int):
     fd = get_fixed_deposit_by_id(cursor, fd_id)
