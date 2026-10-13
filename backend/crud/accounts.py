@@ -370,6 +370,19 @@ def update_account_status(cursor, account_id: int, new_status: str) -> Dict[str,
             detail=f"Savings account with ID {account_id} not found."
         )
 
+    # If closing the account, verify there is no active Fixed Deposit
+    if new_status == "Closed":
+        cursor.execute(
+            "SELECT fd_id FROM FIXEDDEPOSIT WHERE account_id = %s AND status = 'Active'",
+            (account_id,)
+        )
+        active_fd = cursor.fetchone()
+        if active_fd:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot close account #{account_id} because it has an active Fixed Deposit (FD #{active_fd['fd_id']}). Please close or mature the FD first."
+            )
+
     update_sql = "UPDATE SAVINGSACCOUNT SET status = %s WHERE account_id = %s"
     cursor.execute(update_sql, (new_status, account_id))
 

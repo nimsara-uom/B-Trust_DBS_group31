@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Wallet, Plus, ShieldCheck, UserCircle, Users, RefreshCw, Search, X, RotateCcw, Check, ChevronDown } from 'lucide-react';
 import './Accounts.css';
-import { getPlans, getAccounts, getCustomers, createAccount } from '../api';
+import { getPlans, getAccounts, getCustomers, createAccount, updateAccountStatus } from '../api';
 
 const PLAN_ICONS = {
   Children: ShieldCheck,
@@ -218,6 +218,26 @@ const Accounts = () => {
       alert(err.response?.data?.detail || 'Failed to create savings account.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleCloseAccount = async (account) => {
+    const confirmMsg = `Are you sure you want to close account ${account.account_number} (${account.customer_name || 'Holder'}) with current balance of ${formatCurrency(account.current_balance)}?`;
+    if (!window.confirm(confirmMsg)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await updateAccountStatus(account.account_id, 'Closed');
+      alert(`Account ${account.account_number} has been closed successfully.`);
+      const accRes = await getAccounts();
+      setAccounts(accRes.data || []);
+    } catch (err) {
+      console.error('Failed to close account:', err);
+      alert(err.response?.data?.detail || 'Failed to close account.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -474,18 +494,19 @@ const Accounts = () => {
                 <th>Current Balance</th>
                 <th>Status</th>
                 <th>Opened Date</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
                     Loading accounts...
                   </td>
                 </tr>
               ) : filteredAccounts.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '2.5rem', color: '#7F8C8D' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '2.5rem', color: '#7F8C8D' }}>
                     {hasActiveFilters ? (
                       <div>
                         <p style={{ margin: 0, fontSize: '0.95rem' }}>
@@ -513,11 +534,33 @@ const Accounts = () => {
                     <td>{acc.interest_rate != null ? `${acc.interest_rate}%` : '-'}</td>
                     <td className="font-medium">{formatCurrency(acc.current_balance)}</td>
                     <td>
-                      <span className={`badge ${acc.status === 'Active' ? 'badge-success' : 'badge-warning'}`}>
+                      <span className={`badge ${acc.status === 'Active' ? 'badge-success' : acc.status === 'Closed' ? 'badge-error' : 'badge-warning'}`}>
                         {acc.status}
                       </span>
                     </td>
                     <td>{acc.opened_date}</td>
+                    <td>
+                      {acc.status !== 'Closed' ? (
+                        <button
+                          type="button"
+                          className="btn-outline"
+                          style={{
+                            padding: '4px 10px',
+                            fontSize: '0.75rem',
+                            color: '#DC2626',
+                            borderColor: '#FCA5A5',
+                            backgroundColor: '#FEF2F2',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleCloseAccount(acc)}
+                          title="Close this savings account"
+                        >
+                          Close Account
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 500 }}>Closed</span>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}

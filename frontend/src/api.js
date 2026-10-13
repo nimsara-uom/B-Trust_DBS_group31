@@ -58,6 +58,8 @@ export const getAccounts = (status, planId, search, plan) =>
   api.get('/api/accounts', { params: { status, plan_id: planId, search, plan } });
 export const getAccount = (id) => api.get(`/api/accounts/${id}`);
 export const createAccount = (data) => api.post('/api/accounts', data);
+export const updateAccountStatus = (accountId, status) =>
+  api.patch(`/api/accounts/${accountId}/status`, { status });
 
 // Transactions
 export const getTransactions = (params) => api.get('/api/transactions', { params });
@@ -69,6 +71,8 @@ export const getFDPlans = () => api.get('/api/fixed-deposits/plans');
 export const getFixedDeposits = (status, accountId) => 
   api.get('/api/fixed-deposits', { params: { status, account_id: accountId } });
 export const createFixedDeposit = (data) => api.post('/api/fixed-deposits', data);
+export const closeFixedDeposit = (fdId) => 
+  api.patch(`/api/fixed-deposits/${fdId}/close`);
 export const runInterestEngine = (runDate, systemAgentId = 1) => 
   api.post('/api/fixed-deposits/interest-engine/run', {
     p_RunDate: runDate,

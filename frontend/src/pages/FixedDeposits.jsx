@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Clock, Percent, ShieldCheck, RefreshCw, Search, X, RotateCcw, Check, ChevronDown, Lock } from 'lucide-react';
 import './FixedDeposits.css';
-import { getFDPlans, getFixedDeposits, getAccounts, createFixedDeposit } from '../api';
+import { getFDPlans, getFixedDeposits, getAccounts, createFixedDeposit, closeFixedDeposit } from '../api';
 
 const ICONS = [Clock, Percent, ShieldCheck];
 const COLORS = ['blue', 'purple', 'green'];
@@ -117,6 +117,25 @@ const FixedDeposits = () => {
       alert(err.response?.data?.detail || 'Failed to create fixed deposit.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleCloseFD = async (fd) => {
+    const confirmMsg = `Are you sure you want to close FD-${String(fd.fd_id).padStart(4, '0')}? Principal of ${formatCurrency(fd.principal_amount)} will be deposited back to linked savings account (#${fd.account_id}).`;
+    if (!window.confirm(confirmMsg)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await closeFixedDeposit(fd.fd_id);
+      alert(`Fixed Deposit FD-${String(fd.fd_id).padStart(4, '0')} closed successfully. Principal returned to account #${fd.account_id}.`);
+      loadData();
+    } catch (err) {
+      console.error('Error closing FD:', err);
+      alert(err.response?.data?.detail || 'Failed to close fixed deposit.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -304,18 +323,19 @@ const FixedDeposits = () => {
                 <th>Start Date</th>
                 <th>Maturity Date</th>
                 <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
                     Loading fixed deposits from database...
                   </td>
                 </tr>
               ) : filteredFDs.length === 0 ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '2.5rem', color: '#7F8C8D' }}>
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '2.5rem', color: '#7F8C8D' }}>
                     {hasActiveFilters ? (
                       <div>
                         <p style={{ margin: 0, fontSize: '0.95rem' }}>
@@ -345,9 +365,31 @@ const FixedDeposits = () => {
                     <td>{fd.start_date}</td>
                     <td>{fd.maturity_date}</td>
                     <td>
-                      <span className={`badge ${fd.status === 'Active' ? 'badge-success' : 'badge-warning'}`}>
+                      <span className={`badge ${fd.status === 'Active' ? 'badge-success' : fd.status === 'Closed' ? 'badge-error' : 'badge-warning'}`}>
                         {fd.status}
                       </span>
+                    </td>
+                    <td>
+                      {fd.status !== 'Closed' ? (
+                        <button
+                          type="button"
+                          className="btn-outline"
+                          style={{
+                            padding: '4px 10px',
+                            fontSize: '0.75rem',
+                            color: '#DC2626',
+                            borderColor: '#FCA5A5',
+                            backgroundColor: '#FEF2F2',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleCloseFD(fd)}
+                          title="Close this fixed deposit and return principal to linked account"
+                        >
+                          Close FD
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 500 }}>Closed</span>
+                      )}
                     </td>
                   </tr>
                 ))

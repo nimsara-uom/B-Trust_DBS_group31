@@ -88,3 +88,17 @@ def create_fixed_deposit(data: FixedDepositCreate, db = Depends(get_db)):
                 detail="Violation of one-FD-per-account rule: This savings account already has an active fixed deposit."
             )
         raise HTTPException(status_code = 400, detail = str(e))
+
+@router.patch("/{fd_id}/close", response_model = FixedDepositResponse, summary = "Close a fixed deposit")
+def close_fd(fd_id: int, db = Depends(get_db)):
+    cursor, conn = db
+    try:
+        updated_fd = crud_fd.close_fixed_deposit(cursor, fd_id)
+        conn.commit()
+        return updated_fd
+    except ValueError as e:
+        conn.rollback()
+        raise HTTPException(status_code = 400, detail = str(e))
+    except Error as e:
+        conn.rollback()
+        raise HTTPException(status_code = 500, detail = str(e))

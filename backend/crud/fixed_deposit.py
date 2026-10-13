@@ -251,3 +251,67 @@ def run_monthly_engine(cursor, p_RunDate, p_SystemAgentID):
     return {
         "message": "Monthly interest engine executed successfully."
     }
+
+#close fixed deposit and credit principal back to linked savings account
+def close_fixed_deposit(cursor, fd_id: int):
+    fd = get_fixed_deposit_by_id(cursor, fd_id)
+    if not fd:
+        raise ValueError(f"Fixed deposit with ID {fd_id} does not exist.")
+
+    if fd["status"] == "Closed":
+        raise ValueError(f"Fixed deposit FD-{fd_id:04d} is already Closed.")
+
+    account_id = fd["account_id"]
+    principal = fd["principal_amount"]
+
+    # 1. Update FD status to Closed
+    cursor.execute(
+        "UPDATE FIXEDDEPOSIT SET status = 'Closed' WHERE fd_id = %s",
+        (fd_id,)
+    )
+
+    # 2. Find agent assigned to customer of this account (or system fallback agent 1)
+    cursor.execute(
+        """
+        SELECT c.agent_id
+        FROM ACCOUNTHOLDER ah
+        JOIN CUSTOMER c ON ah.customer_id = c.customer_id
+        WHERE ah.account_id = %s
+        LIMIT 1
+        """,
+        (account_id,)
+    )
+    holder = cursor.fetchone()
+    agent_id = holder["agent_id"] if (holder and holder.get("agent_id")) else 1
+
+    # 3. Create a Deposit transaction returning principal back to the savings account
+    ref_no = f"TXN-FD-CLOSE-{fd_id}-{account_id}"
+    cursor.execute(
+        """
+        INSERT INTO BANK_TRANSACTION (
+            account_id,
+            agent_id,
+            fd_id,
+            reference_no,
+            transaction_type,
+            amount,
+            transaction_timestamp
+        ) VALUES (%s, %s, %s, %s, 'Deposit', %s, NOW())
+        """,
+        (
+            account_id,
+            agent_id,
+            fd_id,
+            ref_no,
+            principal
+        )
+    )
+
+    # 4. In case the trigger does not automatically increase the balance:
+    cursor.execute(
+        "SELECT current_balance FROM SAVINGSACCOUNT WHERE account_id = %s",
+        (account_id,)
+    )
+    acc = cursor.fetchone()
+
+    return get_fixed_deposit_by_id(cursor, fd_id)
