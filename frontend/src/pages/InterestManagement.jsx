@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, Play, CheckCircle2, AlertTriangle, FileText, Clock, RefreshCw, Search, X, RotateCcw, TrendingUp, Calendar, ArrowUpRight } from 'lucide-react';
+import { FileText, Clock, RefreshCw, Search, X, RotateCcw, TrendingUp, ArrowUpRight, Zap } from 'lucide-react';
 import './InterestManagement.css';
-import { runInterestEngine, getMonthlyInterestDistribution, getActiveFDsReport } from '../api';
+import { getMonthlyInterestDistribution, getActiveFDsReport } from '../api';
 
 const InterestManagement = () => {
-  const [isRunning, setIsRunning] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [distributions, setDistributions] = useState([]);
   const [activeFDs, setActiveFDs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [runDate, setRunDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [executionMessage, setExecutionMessage] = useState(null);
   const [error, setError] = useState(null);
 
   // Table filters
@@ -37,24 +33,6 @@ const InterestManagement = () => {
       setError('Failed to fetch interest audit records from database.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleRunEngine = async () => {
-    setShowConfirmModal(false);
-    setIsRunning(true);
-    setError(null);
-    setExecutionMessage(null);
-
-    try {
-      const res = await runInterestEngine(runDate, 1);
-      setExecutionMessage(res.data?.message || 'Monthly interest engine executed successfully.');
-      await loadEngineData();
-    } catch (err) {
-      console.error('Error running interest engine:', err);
-      setError(err.response?.data?.detail || 'Engine execution failed.');
-    } finally {
-      setIsRunning(false);
     }
   };
 
@@ -109,46 +87,25 @@ const InterestManagement = () => {
 
   return (
     <div className="page-container">
-      {/* Page Header with integrated Date Picker and Run Button */}
+      {/* Page Header with automated badge */}
       <div className="page-header">
         <div>
           <h2>Interest Engine</h2>
+          <p className="page-header-subtitle">
+            Interest is automatically calculated and credited on each account's monthly anniversary date.
+          </p>
         </div>
         <div className="header-engine-actions">
-          <div className="engine-date-picker-wrap">
-            <span className="engine-date-label">
-              <Calendar size={15} /> Processing Date:
-            </span>
-            <input
-              id="engine-run-date"
-              type="date"
-              className="engine-date-input"
-              value={runDate}
-              onChange={(e) => setRunDate(e.target.value)}
-            />
+          <div className="engine-auto-badge">
+            <span className="auto-pulse-dot"></span>
+            <span className="auto-badge-text">Automated Engine Active</span>
           </div>
-
-          <button
-            className="btn-primary run-engine-header-btn"
-            onClick={() => setShowConfirmModal(true)}
-            disabled={isRunning}
-          >
-            <Play size={16} />
-            <span>{isRunning ? 'Processing...' : 'Run Engine Now'}</span>
-          </button>
         </div>
       </div>
 
       {error && (
         <div className="card" style={{ backgroundColor: '#FEE2E2', color: '#991B1B', marginBottom: '1.5rem', padding: '1rem', borderRadius: '8px' }}>
           {error}
-        </div>
-      )}
-
-      {executionMessage && (
-        <div className="card" style={{ backgroundColor: '#D1FAE5', color: '#065F46', marginBottom: '1.5rem', padding: '1rem', borderRadius: '8px' }}>
-          <CheckCircle2 size={18} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom' }} />
-          {executionMessage}
         </div>
       )}
 
@@ -350,33 +307,6 @@ const InterestManagement = () => {
           </table>
         </div>
       </div>
-
-      {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="modal-overlay">
-          <div className="modal-content modal-confirm-engine">
-            <div className="modal-header">
-              <h3>Confirm Interest Engine Run</h3>
-              <button className="close-btn" onClick={() => setShowConfirmModal(false)}>×</button>
-            </div>
-
-            <div className="modal-body">
-              <p className="confirm-modal-message">
-                Are you sure you want to run the monthly interest engine for <strong>{runDate}</strong>?
-              </p>
-            </div>
-
-            <div className="modal-footer">
-              <button type="button" className="btn-outline" onClick={() => setShowConfirmModal(false)}>
-                Cancel
-              </button>
-              <button type="button" className="btn-primary" onClick={handleRunEngine} disabled={isRunning}>
-                {isRunning ? 'Processing...' : 'Confirm & Run'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -12,6 +12,7 @@ from models.report import (
     MonthlyBankTransactionSummaryResponse
 )
 from crud import report as crud_reports
+from crud import fixed_deposit as crud_fd
 
 router = APIRouter(prefix = "/reports", tags = ["Reports"])
 
@@ -33,16 +34,18 @@ def get_account_transaction_summary(db = Depends(get_db)) -> List[AccountTransac
 
 @router.get("/active-fds", response_model = List[ActiveFDReportResponse], summary = "Report 3: Active FDs and next payout")
 def get_active_fds(db = Depends(get_db)) -> List[ActiveFDReportResponse]:
-    cursor, _ = db
+    cursor, conn = db
     try:
+        crud_fd.process_auto_due_interest(cursor, conn)
         return crud_reports.get_active_fds_report(cursor)
     except Error:
         raise HTTPException(status_code = 500, detail = "Failed to generate report")
 
 @router.get("/monthly-interest-distribution", response_model = List[MonthlyInterestDistributionResponse], summary = "Report 4: Monthly interest distribution summary")
 def get_monthly_interest_distribution(db = Depends(get_db)) -> List[MonthlyInterestDistributionResponse]:
-    cursor, _ = db
+    cursor, conn = db
     try:
+        crud_fd.process_auto_due_interest(cursor, conn)
         return crud_reports.get_monthly_interest_distribution(cursor)
     except Error:
         raise HTTPException(status_code = 500, detail = "Failed to generate report")
