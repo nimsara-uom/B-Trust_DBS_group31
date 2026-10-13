@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Wallet, Plus, ShieldCheck, UserCircle, Users, RefreshCw, Search, X, RotateCcw, Check, ChevronDown } from 'lucide-react';
 import './Accounts.css';
-import { getPlans, getAccounts, getCustomers, createAccount, updateAccountStatus } from '../api';
+import { getPlans, getAccounts, getCustomers, getAgents, createAccount, updateAccountStatus } from '../api';
 
 const PLAN_ICONS = {
   Children: ShieldCheck,
@@ -23,6 +23,7 @@ const Accounts = () => {
   const [plans, setPlans] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('All');
@@ -38,6 +39,15 @@ const Accounts = () => {
   const [secondaryCustSearchQuery, setSecondaryCustSearchQuery] = useState('');
   const [isSecondaryCustDropdownOpen, setIsSecondaryCustDropdownOpen] = useState(false);
 
+  // Close Account Modal state
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  const [closingAccount, setClosingAccount] = useState(null);
+  const [accountCloseSearchQuery, setAccountCloseSearchQuery] = useState('');
+  const [isAccountCloseDropdownOpen, setIsAccountCloseDropdownOpen] = useState(false);
+  const [closingAgentId, setClosingAgentId] = useState('');
+  const [closingReason, setClosingReason] = useState('');
+  const [closeSubmitting, setCloseSubmitting] = useState(false);
+
   const [initialDeposit, setInitialDeposit] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -45,6 +55,7 @@ const Accounts = () => {
 
   const custDropdownRef = useRef(null);
   const secCustDropdownRef = useRef(null);
+  const accountCloseDropdownRef = useRef(null);
 
   useEffect(() => {
     loadData();
@@ -58,6 +69,9 @@ const Accounts = () => {
       if (secCustDropdownRef.current && !secCustDropdownRef.current.contains(e.target)) {
         setIsSecondaryCustDropdownOpen(false);
       }
+      if (accountCloseDropdownRef.current && !accountCloseDropdownRef.current.contains(e.target)) {
+        setIsAccountCloseDropdownOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
@@ -69,14 +83,19 @@ const Accounts = () => {
     try {
       setLoading(true);
       setError(null);
-      const [plansRes, accountsRes, customersRes] = await Promise.all([
+      const [plansRes, accountsRes, customersRes, agentsRes] = await Promise.all([
         getPlans(),
         getAccounts(),
-        getCustomers()
+        getCustomers(),
+        getAgents()
       ]);
       setPlans(plansRes.data || []);
       setAccounts(accountsRes.data || []);
       setCustomers(customersRes.data || []);
+      setAgents(agentsRes.data || []);
+      if (agentsRes.data && agentsRes.data.length > 0) {
+        setClosingAgentId(String(agentsRes.data[0].agent_id));
+      }
       // Default: no customer selected
       setSelectedCustomerId('');
       setSelectedSecondaryCustomerId('');
@@ -88,6 +107,49 @@ const Accounts = () => {
       setError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenCloseModal = () => {
+    setClosingAccount(null);
+    setAccountCloseSearchQuery('');
+    setClosingReason('');
+    if (agents.length > 0) {
+      setClosingAgentId(String(agents[0].agent_id));
+    }
+    setIsCloseModalOpen(true);
+  };
+
+  const handleConfirmCloseAccount = async (e) => {
+    e.preventDefault();
+    if (!closingAccount) {
+      alert('Please search and select the savings account to close.');
+      return;
+    }
+    if (!closingAgentId) {
+      alert('Please select an authorized agent.');
+      return;
+    }
+    if (!closingReason.trim()) {
+      alert('Please provide a reason for closing the account.');
+      return;
+    }
+
+    try {
+      setCloseSubmitting(true);
+      await updateAccountStatus(closingAccount.account_id, 'Closed');
+      alert(`Account ${closingAccount.account_number} closed successfully.\nReason: ${closingReason}`);
+      setIsCloseModalOpen(false);
+      setClosingAccount(null);
+      setAccountCloseSearchQuery('');
+      setClosingReason('');
+      const accRes = await getAccounts();
+      setAccounts(accRes.data || []);
+    } catch (err) {
+      console.error('Failed to close account:', err);
+      alert(err.response?.data?.detail || 'Failed to close account.');
+    } finally {
+      setCloseSubmitting(false);
     }
   };
 
@@ -359,6 +421,17 @@ const Accounts = () => {
     return nameMatch || idMatch || nicMatch;
   });
 
+  // Filter active/inactive accounts available to be closed
+  const filteredAccountsToClose = accounts.filter(acc => {
+    if (acc.status === 'Closed') return false;
+    if (!accountCloseSearchQuery.trim()) return true;
+    const q = accountCloseSearchQuery.toLowerCase().trim();
+    const accNo = (acc.account_number || '').toLowerCase();
+    const holder = (acc.customer_name || acc.primary_customer || '').toLowerCase();
+    const nic = (acc.national_id || '').toLowerCase();
+    return accNo.includes(q) || holder.includes(q) || nic.includes(q);
+  });
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -366,6 +439,25 @@ const Accounts = () => {
           <h2>Savings Accounts</h2>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button
+            type="button"
+            className="btn-outline"
+            style={{
+              borderColor: '#f87171',
+              color: '#dc2626',
+              backgroundColor: '#fff',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+            onClick={handleOpenCloseModal}
+          >
+            <X size={18} /> Close Savings Account
+          </button>
           <button className="btn-primary" onClick={handleOpenModal}>
             <Plus size={18} /> Open Savings Account
           </button>
@@ -494,13 +586,12 @@ const Accounts = () => {
                 <th>Current Balance</th>
                 <th>Status</th>
                 <th>Opened Date</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
                     Loading accounts...
                   </td>
                 </tr>
@@ -539,28 +630,6 @@ const Accounts = () => {
                       </span>
                     </td>
                     <td>{acc.opened_date}</td>
-                    <td>
-                      {acc.status !== 'Closed' ? (
-                        <button
-                          type="button"
-                          className="btn-outline"
-                          style={{
-                            padding: '4px 10px',
-                            fontSize: '0.75rem',
-                            color: '#DC2626',
-                            borderColor: '#FCA5A5',
-                            backgroundColor: '#FEF2F2',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => handleCloseAccount(acc)}
-                          title="Close this savings account"
-                        >
-                          Close Account
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 500 }}>Closed</span>
-                      )}
-                    </td>
                   </tr>
                 ))
               )}
@@ -883,6 +952,192 @@ const Accounts = () => {
                 <button type="button" className="btn-outline" onClick={() => setIsModalOpen(false)}>Cancel</button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
                   {submitting ? 'Creating...' : 'Create Account'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Close Savings Account Modal */}
+      {isCloseModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content modal-content-large">
+            <div className="modal-header">
+              <h3 style={{ color: '#dc2626' }}>Close Savings Account</h3>
+              <button className="close-btn" onClick={() => setIsCloseModalOpen(false)}>×</button>
+            </div>
+            <form onSubmit={handleConfirmCloseAccount}>
+              <div className="modal-body">
+                <div className="form-grid">
+                  {/* Account Search and Selection */}
+                  <div className="form-group col-span-2">
+                    <label>Search & Select Savings Account to Close *</label>
+                    <div className="customer-search-wrapper" ref={accountCloseDropdownRef}>
+                      <div className="customer-search-bar">
+                        <div className="customer-search-input-wrap">
+                          <Search size={16} className="search-icon-modal" />
+                          <input
+                            type="text"
+                            placeholder="Search by account no (e.g. SA-00001), customer name, or NIC..."
+                            value={accountCloseSearchQuery}
+                            onFocus={() => setIsAccountCloseDropdownOpen(true)}
+                            onChange={(e) => {
+                              setAccountCloseSearchQuery(e.target.value);
+                              setIsAccountCloseDropdownOpen(true);
+                            }}
+                          />
+                          {accountCloseSearchQuery && (
+                            <button
+                              type="button"
+                              className="clear-search-btn"
+                              onClick={() => {
+                                setAccountCloseSearchQuery('');
+                                setIsAccountCloseDropdownOpen(true);
+                              }}
+                              title="Clear search"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Dropdown list of accounts */}
+                      {isAccountCloseDropdownOpen && (
+                        <div className="customer-search-results-popover">
+                          <div className="customer-search-popover-header">
+                            <span>Available Accounts to Close ({filteredAccountsToClose.length})</span>
+                            <span className="search-popover-hint">Click account to select</span>
+                          </div>
+                          <div className="customer-search-results-list">
+                            {filteredAccountsToClose.length > 0 ? (
+                              filteredAccountsToClose.map(acc => {
+                                const isSelected = closingAccount && closingAccount.account_id === acc.account_id;
+                                return (
+                                  <div
+                                    key={acc.account_id}
+                                    className={`customer-search-result-item ${isSelected ? 'selected' : ''}`}
+                                    onClick={() => {
+                                      setClosingAccount(acc);
+                                      setIsAccountCloseDropdownOpen(false);
+                                    }}
+                                  >
+                                    <div className="cust-item-main">
+                                      <div className="cust-item-title">
+                                        <span className="cust-item-id">{acc.account_number}</span>
+                                        <span className="cust-item-name">{acc.customer_name || acc.primary_customer || 'Holder'}</span>
+                                      </div>
+                                      <div className="cust-item-sub">
+                                        <span>Plan: <strong>{acc.plan_name}</strong></span>
+                                        <span>• Balance: <strong>{formatCurrency(acc.current_balance)}</strong></span>
+                                        <span>• Status: {acc.status}</span>
+                                      </div>
+                                    </div>
+                                    {isSelected && <Check size={16} className="text-primary" />}
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="customer-search-empty">
+                                No active accounts match "{accountCloseSearchQuery}".
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Selected Account Card */}
+                      {closingAccount && (
+                        <div className="selected-customer-card" style={{ borderColor: '#fca5a5', backgroundColor: '#fef2f2' }}>
+                          <div className="selected-customer-details">
+                            <span className="selected-cust-badge" style={{ color: '#dc2626' }}>Selected Account for Closure</span>
+                            <div className="selected-cust-name">
+                              <strong>{closingAccount.account_number}</strong> — {closingAccount.customer_name || closingAccount.primary_customer}
+                            </div>
+                            <div className="selected-cust-nic">
+                              Plan: {closingAccount.plan_name} | Current Balance: <strong>{formatCurrency(closingAccount.current_balance)}</strong> | Status: {closingAccount.status}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-change-cust"
+                            onClick={() => {
+                              setClosingAccount(null);
+                              setIsAccountCloseDropdownOpen(true);
+                            }}
+                          >
+                            Change
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Agent Selection */}
+                  <div className="form-group col-span-2">
+                    <label>Select Authorizing Agent *</label>
+                    <select
+                      value={closingAgentId}
+                      onChange={(e) => setClosingAgentId(e.target.value)}
+                      required
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '0.95rem',
+                        fontWeight: 500,
+                        backgroundColor: '#fff',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="">-- Choose Agent --</option>
+                      {agents.map(ag => (
+                        <option key={ag.agent_id} value={ag.agent_id}>
+                          {ag.agent_name} {ag.branch_name ? `(${ag.branch_name})` : `(Agent #${ag.agent_id})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Reason for Closure */}
+                  <div className="form-group col-span-2">
+                    <label>Reason for Closing *</label>
+                    <textarea
+                      rows={3}
+                      placeholder="e.g. Customer request, relocation, switching bank account, maturity..."
+                      value={closingReason}
+                      onChange={(e) => setClosingReason(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '0.95rem',
+                        fontFamily: 'inherit',
+                        resize: 'vertical'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn-outline" onClick={() => setIsCloseModalOpen(false)}>Cancel</button>
+                <button
+                  type="submit"
+                  style={{
+                    backgroundColor: '#dc2626',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 18px',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                  disabled={closeSubmitting}
+                >
+                  {closeSubmitting ? 'Closing Account...' : 'Confirm Account Closure'}
                 </button>
               </div>
             </form>
