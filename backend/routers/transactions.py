@@ -5,8 +5,36 @@ import mysql.connector
 from database import get_db
 from models.transaction import DepositRequest, WithdrawalRequest, TransactionResponse
 from crud import transactions as crud_txn
+from email_service import send_transaction_email
 
 router = APIRouter(prefix="/api/transactions", tags=["Transactions"])
+
+
+def _fetch_account_email_info(cursor, account_id: int):
+    """
+    Returns (account_number, current_balance, list_of_(name, email) tuples)
+    for all holders of the given account.
+    """
+    cursor.execute(
+        "SELECT account_number, current_balance FROM SAVINGSACCOUNT WHERE account_id = %s",
+        (account_id,)
+    )
+    acc = cursor.fetchone()
+    if not acc:
+        return None, None, []
+
+    cursor.execute(
+        """
+        SELECT c.full_name, c.email
+        FROM ACCOUNTHOLDER ah
+        JOIN CUSTOMER c ON ah.customer_id = c.customer_id
+        WHERE ah.account_id = %s
+        ORDER BY c.customer_id ASC
+        """,
+        (account_id,)
+    )
+    holders = cursor.fetchall()
+    return acc["account_number"], acc["current_balance"], holders
 
 
 @router.post(
@@ -37,6 +65,20 @@ def deposit(data: DepositRequest, db=Depends(get_db)):
         txn = cursor.fetchone()
         if not txn:
             raise HTTPException(status_code=500, detail="Deposit was processed but transaction record not found.")
+
+        # --- Send transaction alert emails ---
+        account_number, balance, holders = _fetch_account_email_info(cursor, data.account_id)
+        if account_number and holders:
+            for holder in holders:
+                send_transaction_email(
+                    to_email=holder.get("email") or "",
+                    to_name=holder.get("full_name") or "Valued Customer",
+                    transaction_type="Deposit",
+                    amount=float(data.amount),
+                    account_number=account_number,
+                    balance=float(balance) if balance is not None else 0.0,
+                )
+
         return txn
 
     except mysql.connector.Error as e:
@@ -78,6 +120,20 @@ def withdraw(data: WithdrawalRequest, db=Depends(get_db)):
         txn = cursor.fetchone()
         if not txn:
             raise HTTPException(status_code=500, detail="Withdrawal was processed but transaction record not found.")
+
+        # --- Send transaction alert emails ---
+        account_number, balance, holders = _fetch_account_email_info(cursor, data.account_id)
+        if account_number and holders:
+            for holder in holders:
+                send_transaction_email(
+                    to_email=holder.get("email") or "",
+                    to_name=holder.get("full_name") or "Valued Customer",
+                    transaction_type="Withdrawal",
+                    amount=float(data.amount),
+                    account_number=account_number,
+                    balance=float(balance) if balance is not None else 0.0,
+                )
+
         return txn
 
     except mysql.connector.Error as e:
@@ -142,3 +198,6 @@ def get_transaction(transaction_id: int, db=Depends(get_db)):
         return txn
     except mysql.connector.Error as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+

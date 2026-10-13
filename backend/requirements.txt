@@ -4,3 +4,4 @@ mysql-connector-python
 python-dotenv
 pydantic
 python-dateutil
+sib-api-v3-sdk

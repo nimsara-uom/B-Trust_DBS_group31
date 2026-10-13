@@ -15,5 +15,10 @@ class Settings:
     AUTH_USERNAME = os.getenv("AUTH_USERNAME", "admin")
     AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "admin")
 
+    # Brevo (Sendinblue) transactional email
+    BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
+    BREVO_SENDER_EMAIL = os.getenv("BREVO_SENDER_EMAIL", "noreply@btrustbank.lk")
+    BREVO_SENDER_NAME = os.getenv("BREVO_SENDER_NAME", "B-Trust Digital Banking")
+
 
 settings = Settings()
