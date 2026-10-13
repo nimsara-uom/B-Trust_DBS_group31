@@ -106,71 +106,65 @@ their database responsibilities to the corresponding Phase 2 application work.
 
 | Contributor | Phase 1 database role | Phase 2 backend/frontend role |
 | :--- | :--- | :--- |
-| Yasarathna G.L.R.S (`240741L`) | Fixed-deposit logic | FD API, tenure, and maturity displays |
-| Kodithuwakku K.A.N.N (`240351P`) | Core schema and registry | Customer registration and account creation |
-| Sandamini M.M.R (`240589C`) | ACID transaction engine | Deposit/withdrawal APIs and transaction UI |
-| Dhananjaya P.D.L.K (`240118J`) | Interest processing | Interest-engine execution and audit presentation |
-| Jayawardana Y.G.L.S (`240294R`) | Data and analytics reporting |  dashboard, and report tables |
+| Sandamini M.M.R (`240589C`) | **Member 2:** Transaction Procedures (ACID Engine) | **Member 1:** Project Foundation, Config, DB Pool & Auth |
+| Dananjaya P.D.L.K (`240118J`) | **Member 3:** Fixed Deposit Logic & Triggers | **Member 2:** Branches, Agents & Customers CRUD APIs |
+| Yasarathna G.L.R.S (`240741L`) | **Member 4:** Automated Interest Engine (`sp_RunMonthlyEngine`) | **Member 3:** Savings Accounts, Plans & Holders APIs |
+| Kodithuwakku K.A.N.N (`240351P`) | **Member 1:** Core Schema & Master Setup | **Member 4:** Transactions (Deposits, Withdrawals) & Procedures |
+| Jayawardana Y.G.L.S (`240294R`) | **Member 5:** Data Population & Reporting Queries | **Member 5:** Fixed Deposits & 5 Management Reports |
 
 ### Phase 1: MySQL Database & Core Logic Engine
 
-#### Yasarathna G.L.R.S— Fixed Deposit Logic
+#### Kodithuwakku K.A.N.N — Core Schema & Master Setup (Member 1)
+- Wrote Data Definition Language (DDL) statements to create `BRANCH`, `AGENT`, `CUSTOMER`, and `SAVINGSACCOUNT` tables.
+- Enforced all Primary Keys, Foreign Keys, unique constraints, and ENUMs for account plans.
+- Ensured strict 3rd Normal Form (3NF) adherence and relational integrity across the registry.
 
-- Created `FIXEDDEPOSIT` and FD-plan structures.
-- Implemented the single-active-FD constraint trigger.
-- Implemented `fn_CalculateMaturityDate` and fixed-deposit creation logic.
+#### Sandamini M.M.R — Transaction Procedures / ACID Engine (Member 2)
+- Created the `BANK_TRANSACTION` ledger table.
+- Implemented the critical stored procedures `sp_ProcessDeposit` and `sp_ProcessWithdrawal`.
+- Applied transaction control (`START TRANSACTION`, `COMMIT`, `ROLLBACK`), row-level locking, and overdraft protection based on minimum balance rules.
 
-#### Kodithuwakku K.A.N.N — Core Schema & Registry
+#### Dananjaya P.D.L.K — Fixed Deposit Logic & Triggers (Member 3)
+- Created the `FIXEDDEPOSIT` table and associated structures.
+- Implemented the database trigger `trg_CheckSingleFDConstraint` (enforcing one active FD per savings account).
+- Developed the stored function `fn_CalculateMaturityDate` to handle 6, 12, and 36-month maturity date calculations.
 
-- Created the core DDL for `BRANCH`, `AGENT`, `CUSTOMER`, and
-  `SAVINGSACCOUNT`.
-- Defined primary keys, foreign keys, uniqueness rules, and branch/agent
-  relationships.
-- Supported customer registration and account creation workflows.
+#### Yasarathna G.L.R.S — Automated Interest Engine (Member 4)
+- Implemented the complex batch stored procedure `sp_RunMonthlyEngine`.
+- Utilized database cursors to iterate across active accounts and fixed deposits, calculating exact 30-day interest based on plan rates.
+- Handled balance updates, interest audit records in the transaction ledger, and date advancements.
 
-#### Sandamini M.M.R — Transaction Engine (ACID)
+#### Jayawardana Y.G.L.S — Data Population & Reporting Queries (Member 5)
+- Prepared Data Manipulation Language (DML) scripts and seed datasets (branches, agents, customers, plans, FDs, and transactions).
+- Authored the 5 complex multi-table management report queries (`SELECT` with advanced `JOIN`s, `GROUP BY`, and aggregate metrics).
+- Validated business reporting outputs and operational integrity.
 
-- Created the `BANK_TRANSACTION` ledger.
-- Implemented `sp_ProcessDeposit` and `sp_ProcessWithdrawal`.
-- Added account row locking, transaction boundaries, and overdraft/minimum
-  balance protection.
+### Phase 2: FastAPI Backend & API Layer (Swagger UI / QA)
 
-#### Dhananjaya P.D.L.K — Interest Processing
+- **Sandamini M.M.R (Backend Member 1 — Project Foundation & Auth):**
+  - Project scaffolding, `config.py` environment settings, and `requirements.txt`.
+  - Database connection pooling (`database.py`) with `get_db()` FastAPI dependency.
+  - HTTP Basic Authentication (`auth.py`) and FastAPI root setup (`main.py`, CORS, `/health`).
 
-- Implemented `sp_RunMonthlyEngine`.
-- Added cursor-based processing for eligible active fixed deposits.
-- Added monthly interest calculation, transaction auditing, and date
-  advancement.
+- **Dananjaya P.D.L.K (Backend Member 2 — Branches, Agents & Customers):**
+  - Pydantic models, CRUD functions, and API routers for `/api/branches`, `/api/agents`, and `/api/customers`.
+  - Branch and agent management and customer onboarding/update workflows.
 
-#### Jayawardana Y.G.L.S  — Data & Analytics Reporting
+- **Yasarathna G.L.R.S (Backend Member 3 — Savings Accounts, Plans & Holders):**
+  - Pydantic schemas, CRUD layer, and route handlers for `/api/plans`, `/api/accounts`, and `/api/accounts/{account_id}/holders`.
+  - Account opening, plan eligibility validation, status toggling, and joint account holder linking.
 
-- Prepared seed data for branches, agents, customers, accounts, plans,
-  fixed deposits, and transactions.
-- Created multi-table reporting queries for operational summaries.
-- Supported validation of sample-data and reporting requirements.
+- **Kodithuwakku K.A.N.N (Backend Member 4 — Transactions & Stored Procedures):**
+  - Transaction models, route handlers, and DB calls for `/api/transactions/deposit`, `/api/transactions/withdraw`, and transaction queries with filters.
+  - Integration with stored procedures `sp_ProcessDeposit` and `sp_ProcessWithdrawal`, returning clean HTTP 400 error responses on trigger/overdraft rejections.
 
-### Phase 2: FastAPI Backend, API Layer & QA
+- **Jayawardana Y.G.L.S (Backend Member 5 — Fixed Deposits & 5 Management Reports):**
+  - Fixed deposit schemas, CRUD queries, and endpoints (`/api/fd-plans`, `/api/fixed-deposits`, `/api/interest-engine/run`).
+  - Implemented the 5 mandatory management report endpoints (`/api/reports/*`) and aggregation queries.
 
-- **Yasarathna G.L.R.S:** Fixed-deposit routes, 
-  plan  selection, statusdisplays,
-  maturity(related UI), Report genaration
-  Docker imgage creation .
-
-- **Kodithuwakku K.A.N.N:** Customer and account route workflows, request
-  validation, and account-management screens.
-
-- **Sandamini M.M.R:** Deposit, withdrawal, transaction-history routes, and
-  transaction forms.
-
-- **Dhananjaya P.D.L.K:** Interest-engine execution endpoint, execution
-  feedback, and interest-distribution presentation.
-
-- **Jayawardana Y.G.L.S:** Report endpoints, dashboard aggregates, report
-  selection, and table/chart views.
-
-- **Shared QA:** API/database connectivity checks, authentication checks,
-  frontend build/lint checks, transaction-rule verification, and deployment
-  configuration review.
+- **Shared QA & Validation:**
+  - Full API and database connectivity validation using auto-generated Swagger UI (`/docs`).
+  - Verification of triggers, stored procedures, overdraft checks, and report generation across all endpoints.
 
 ## 5. Project Directory Structure
 
