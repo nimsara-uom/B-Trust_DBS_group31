@@ -12,7 +12,7 @@ banking and microfinance operations. It manages branches, agents, customers,
 savings accounts, deposits, withdrawals, fixed deposits, interest processing,
 and management reporting.
 
-> Built with caffeine and late nights. ☕
+
 
 ## Live Links
 
