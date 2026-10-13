@@ -106,11 +106,11 @@ their database responsibilities to the corresponding Phase 2 application work.
 
 | Contributor | Phase 1 database role | Phase 2 backend/frontend role |
 | :--- | :--- | :--- |
+| Yasarathna G.L.R.S (`240741L`) | Fixed-deposit logic | FD API, tenure, and maturity displays |
 | Kodithuwakku K.A.N.N (`240351P`) | Core schema and registry | Customer registration and account creation |
 | Sandamini M.M.R (`240589C`) | ACID transaction engine | Deposit/withdrawal APIs and transaction UI |
-| Jayawardana Y.G.L.S (`240294R`) | Fixed-deposit logic | FD API, tenure, and maturity displays |
 | Dhananjaya P.D.L.K (`240118J`) | Interest processing | Interest-engine execution and audit presentation |
-| Yasarathna G.L.R.S (`240741L`) | Data and analytics reporting | Report APIs, dashboard, and report tables |
+| Jayawardana Y.G.L.S (`240294R`) | Data and analytics reporting |  dashboard, and report tables |
 
 ### Phase 1: MySQL Database & Core Logic Engine
 
