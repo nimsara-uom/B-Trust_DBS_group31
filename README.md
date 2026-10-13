@@ -114,6 +114,12 @@ their database responsibilities to the corresponding Phase 2 application work.
 
 ### Phase 1: MySQL Database & Core Logic Engine
 
+#### Yasarathna G.L.R.S— Fixed Deposit Logic
+
+- Created `FIXEDDEPOSIT` and FD-plan structures.
+- Implemented the single-active-FD constraint trigger.
+- Implemented `fn_CalculateMaturityDate` and fixed-deposit creation logic.
+
 #### Kodithuwakku K.A.N.N — Core Schema & Registry
 
 - Created the core DDL for `BRANCH`, `AGENT`, `CUSTOMER`, and
@@ -129,12 +135,6 @@ their database responsibilities to the corresponding Phase 2 application work.
 - Added account row locking, transaction boundaries, and overdraft/minimum
   balance protection.
 
-#### Jayawardana Y.G.L.S — Fixed Deposit Logic
-
-- Created `FIXEDDEPOSIT` and FD-plan structures.
-- Implemented the single-active-FD constraint trigger.
-- Implemented `fn_CalculateMaturityDate` and fixed-deposit creation logic.
-
 #### Dhananjaya P.D.L.K — Interest Processing
 
 - Implemented `sp_RunMonthlyEngine`.
@@ -142,7 +142,7 @@ their database responsibilities to the corresponding Phase 2 application work.
 - Added monthly interest calculation, transaction auditing, and date
   advancement.
 
-#### Yasarathna G.L.R.S — Data & Analytics Reporting
+#### Jayawardana Y.G.L.S  — Data & Analytics Reporting
 
 - Prepared seed data for branches, agents, customers, accounts, plans,
   fixed deposits, and transactions.
@@ -151,16 +151,23 @@ their database responsibilities to the corresponding Phase 2 application work.
 
 ### Phase 2: FastAPI Backend, API Layer & QA
 
+- **Yasarathna G.L.R.S:** Fixed-deposit routes, 
+  plan  selection, statusdisplays,
+  maturity(related UI), Report genaration
+  Docker imgage creation .
+
 - **Kodithuwakku K.A.N.N:** Customer and account route workflows, request
   validation, and account-management screens.
+
 - **Sandamini M.M.R:** Deposit, withdrawal, transaction-history routes, and
   transaction forms.
-- **Jayawardana Y.G.L.S:** Fixed-deposit routes, plan selection, status
-  displays, and maturity-related UI.
+
 - **Dhananjaya P.D.L.K:** Interest-engine execution endpoint, execution
   feedback, and interest-distribution presentation.
-- **Yasarathna G.L.R.S:** Report endpoints, dashboard aggregates, report
+
+- **Jayawardana Y.G.L.S:** Report endpoints, dashboard aggregates, report
   selection, and table/chart views.
+
 - **Shared QA:** API/database connectivity checks, authentication checks,
   frontend build/lint checks, transaction-rule verification, and deployment
   configuration review.
@@ -453,4 +460,3 @@ Additional requirements, ER design, and project material are available in
 [`docs/`](docs/) and [`docs_md/`](docs_md/).
 
 
-> Built with caffeine and late nights. ☕
