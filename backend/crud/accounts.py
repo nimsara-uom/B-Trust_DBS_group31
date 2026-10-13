@@ -281,6 +281,34 @@ def create_savings_account(cursor, data: AccountCreate) -> Dict[str, Any]:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Secondary customer with ID {data.secondary_customer_id} does not exist."
             )
+    elif plan["plan_name"] == "Children":
+        validate_plan_eligibility(plan["plan_name"], customer["dob"])
+        if not data.secondary_customer_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A Children savings account requires a parent or legal guardian. Please select an adult parent/guardian."
+            )
+        if data.secondary_customer_id == data.customer_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Child and parent/guardian cannot be the same customer."
+            )
+        cursor.execute(
+            "SELECT customer_id, full_name, dob, customer_type FROM CUSTOMER WHERE customer_id = %s",
+            (data.secondary_customer_id,)
+        )
+        guardian = cursor.fetchone()
+        if not guardian:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Guardian customer with ID {data.secondary_customer_id} does not exist."
+            )
+        guardian_age = calculate_age(guardian["dob"])
+        if guardian_age < 18:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"The assigned parent/guardian must be an adult aged 18 or above (selected guardian age: {guardian_age})."
+            )
     else:
         validate_plan_eligibility(plan["plan_name"], customer["dob"])
 

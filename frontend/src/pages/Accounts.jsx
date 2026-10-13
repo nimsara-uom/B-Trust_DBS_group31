@@ -105,6 +105,10 @@ const Accounts = () => {
 
   const handlePlanSelect = (plan) => {
     setSelectedPlanId(plan.plan_id);
+    if (plan.plan_name !== 'Joint' && plan.plan_name !== 'Children') {
+      setSelectedSecondaryCustomerId('');
+      setSecondaryCustSearchQuery('');
+    }
     const minBal = Number(plan.minimum_balance || 0);
     // Automatically fill the minimum balance. If current deposit is less than min balance, update to min balance.
     setInitialDeposit(minBal.toString());
@@ -155,6 +159,7 @@ const Accounts = () => {
 
     const selectedPlan = plans.find(p => String(p.plan_id) === String(selectedPlanId));
     const isJoint = selectedPlan && selectedPlan.plan_name === 'Joint';
+    const isChildren = selectedPlan && selectedPlan.plan_name === 'Children';
 
     if (isJoint) {
       if (!selectedSecondaryCustomerId) {
@@ -163,6 +168,17 @@ const Accounts = () => {
       }
       if (String(selectedSecondaryCustomerId) === String(selectedCustomerId)) {
         alert('Primary and secondary account holders cannot be the same customer. Please select two different customers.');
+        return;
+      }
+    }
+
+    if (isChildren) {
+      if (!selectedSecondaryCustomerId) {
+        alert('Children savings accounts require a parent or legal guardian. Please select an adult parent/guardian.');
+        return;
+      }
+      if (String(selectedSecondaryCustomerId) === String(selectedCustomerId)) {
+        alert('Child and parent/guardian cannot be the same person. Please select a different customer as parent/guardian.');
         return;
       }
     }
@@ -181,7 +197,7 @@ const Accounts = () => {
       setError(null);
       await createAccount({
         customer_id: parseInt(selectedCustomerId),
-        secondary_customer_id: isJoint ? parseInt(selectedSecondaryCustomerId) : null,
+        secondary_customer_id: (isJoint || isChildren) ? parseInt(selectedSecondaryCustomerId) : null,
         plan_id: parseInt(selectedPlanId),
         initial_deposit: depositAmount,
       });
@@ -255,9 +271,35 @@ const Accounts = () => {
     return nameMatch || idMatch || nicMatch;
   });
 
+  const calculateAgeFromDob = (dobStr) => {
+    if (!dobStr) return 0;
+    const dob = new Date(dobStr);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const selectedCustomer = customers.find(c => String(c.customer_id) === String(selectedCustomerId));
+  const selectedSecondaryCustomer = customers.find(c => String(c.customer_id) === String(selectedSecondaryCustomerId));
+  const selectedPlan = plans.find(p => String(p.plan_id) === String(selectedPlanId));
+  const isJointPlan = selectedPlan && selectedPlan.plan_name === 'Joint';
+  const isChildrenPlan = selectedPlan && selectedPlan.plan_name === 'Children';
+  const minRequiredBalance = selectedPlan ? Number(selectedPlan.minimum_balance || 0) : 0;
+
   const filteredModalSecondaryCustomers = customers.filter(c => {
     // Avoid listing the already selected primary customer
     if (String(c.customer_id) === String(selectedCustomerId)) return false;
+
+    // For Children savings plan, guardian must be an adult (age >= 18)
+    if (isChildrenPlan) {
+      const age = calculateAgeFromDob(c.dob);
+      if (age < 18) return false;
+    }
+
     if (!secondaryCustSearchQuery.trim()) return true;
     const q = secondaryCustSearchQuery.toLowerCase().trim();
     const nameMatch = (c.full_name || '').toLowerCase().includes(q);
@@ -268,12 +310,6 @@ const Accounts = () => {
 
     return nameMatch || idMatch || nicMatch;
   });
-
-  const selectedCustomer = customers.find(c => String(c.customer_id) === String(selectedCustomerId));
-  const selectedSecondaryCustomer = customers.find(c => String(c.customer_id) === String(selectedSecondaryCustomerId));
-  const selectedPlan = plans.find(p => String(p.plan_id) === String(selectedPlanId));
-  const isJointPlan = selectedPlan && selectedPlan.plan_name === 'Joint';
-  const minRequiredBalance = selectedPlan ? Number(selectedPlan.minimum_balance || 0) : 0;
 
   return (
     <div className="page-container">
@@ -496,10 +532,10 @@ const Accounts = () => {
                     </div>
                   </div>
 
-                  {/* Customer 1 (Primary Account Holder) */}
+                  {/* Customer 1 (Primary Account Holder / Child) */}
                   <div className="form-group col-span-2">
                     <label>
-                      {isJointPlan ? 'Primary Customer (Account Holder 1) *' : 'Select Customer *'}
+                      {isChildrenPlan ? 'Child Customer *' : isJointPlan ? 'Primary Customer (Account Holder 1) *' : 'Select Customer *'}
                     </label>
                     <div className="customer-search-wrapper" ref={custDropdownRef}>
                       <div className="customer-search-bar">
@@ -507,7 +543,7 @@ const Accounts = () => {
                           <Search size={16} className="search-icon-modal" />
                           <input
                             type="text"
-                            placeholder={isJointPlan ? "Search for primary customer (Customer 1)..." : "Search by customer name, NIC, or customer ID..."}
+                            placeholder={isChildrenPlan ? "Search for child customer (under 13 years)..." : isJointPlan ? "Search for primary customer (Customer 1)..." : "Search by customer name, NIC, or customer ID..."}
                             value={custSearchQuery}
                             onFocus={() => setIsCustDropdownOpen(true)}
                             onChange={(e) => {
@@ -565,7 +601,7 @@ const Accounts = () => {
                                       </div>
                                       <div className="cust-item-sub">
                                         <span>NIC / Birth Cert: <strong>{c.national_id || 'N/A'}</strong></span>
-                                        {c.phone && <span>• Tel: {c.phone}</span>}
+                                        {c.dob && <span>• DOB: {c.dob}</span>}
                                         {c.customer_type && (
                                           <span className="cust-item-type-tag">{c.customer_type}</span>
                                         )}
@@ -589,12 +625,12 @@ const Accounts = () => {
                         <div className="selected-customer-card">
                           <div className="selected-customer-details">
                             <span className="selected-cust-badge">
-                              {isJointPlan ? 'Primary Account Holder' : 'Selected Customer'}
+                              {isChildrenPlan ? 'Child (Primary Owner)' : isJointPlan ? 'Primary Account Holder' : 'Selected Customer'}
                             </span>
                             <div className="selected-cust-name">
                               <strong>CUST-{String(selectedCustomer.customer_id).padStart(3, '0')}</strong> — {selectedCustomer.full_name}
                             </div>
-                            <div className="selected-cust-nic">NIC: {selectedCustomer.national_id} | Phone: {selectedCustomer.phone || '-'}</div>
+                            <div className="selected-cust-nic">NIC / Birth Cert: {selectedCustomer.national_id} | DOB: {selectedCustomer.dob}</div>
                           </div>
                           <button
                             type="button"
@@ -611,12 +647,16 @@ const Accounts = () => {
                     </div>
                   </div>
 
-                  {/* Secondary Customer for Joint Account */}
-                  {isJointPlan && (
+                  {/* Secondary Customer for Joint Account OR Parent/Guardian for Children Account */}
+                  {(isJointPlan || isChildrenPlan) && (
                     <div className="form-group col-span-2" style={{ animation: 'fadeInDown 0.2s ease-out' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                        <label style={{ margin: 0 }}>Secondary Customer (Account Holder 2) *</label>
-                        <span style={{ fontSize: '0.75rem', color: '#6366f1', fontWeight: 600 }}>Joint Account Requirement</span>
+                        <label style={{ margin: 0 }}>
+                          {isChildrenPlan ? 'Parent / Legal Guardian *' : 'Secondary Customer (Account Holder 2) *'}
+                        </label>
+                        <span style={{ fontSize: '0.75rem', color: '#6366f1', fontWeight: 600 }}>
+                          {isChildrenPlan ? 'Children Account Requirement' : 'Joint Account Requirement'}
+                        </span>
                       </div>
                       <div className="customer-search-wrapper" ref={secCustDropdownRef}>
                         <div className="customer-search-bar">
@@ -624,7 +664,7 @@ const Accounts = () => {
                             <Search size={16} className="search-icon-modal" />
                             <input
                               type="text"
-                              placeholder="Search for secondary customer (Customer 2)..."
+                              placeholder={isChildrenPlan ? "Search for parent / guardian (name, NIC, or ID)..." : "Search for secondary customer (Customer 2)..."}
                               value={secondaryCustSearchQuery}
                               onFocus={() => setIsSecondaryCustDropdownOpen(true)}
                               onChange={(e) => {
@@ -657,7 +697,9 @@ const Accounts = () => {
                                   ? `Matching Customers (${filteredModalSecondaryCustomers.length})`
                                   : `Available Customers (${filteredModalSecondaryCustomers.length})`}
                               </span>
-                              <span className="search-popover-hint">Click to select 2nd holder</span>
+                              <span className="search-popover-hint">
+                                {isChildrenPlan ? 'Click to select parent/guardian' : 'Click to select 2nd holder'}
+                              </span>
                             </div>
                             <div className="customer-search-results-list">
                               {filteredModalSecondaryCustomers.length > 0 ? (
@@ -679,10 +721,8 @@ const Accounts = () => {
                                         </div>
                                         <div className="cust-item-sub">
                                           <span>NIC: <strong>{c.national_id || 'N/A'}</strong></span>
+                                          {c.dob && <span>• DOB: {c.dob}</span>}
                                           {c.phone && <span>• Tel: {c.phone}</span>}
-                                          {c.customer_type && (
-                                            <span className="cust-item-type-tag">{c.customer_type}</span>
-                                          )}
                                         </div>
                                       </div>
                                       {isSelected && <Check size={16} className="text-primary" />}
@@ -698,15 +738,17 @@ const Accounts = () => {
                           </div>
                         )}
 
-                        {/* Selected Secondary Customer Card */}
+                        {/* Selected Secondary Customer / Parent Card */}
                         {selectedSecondaryCustomer && (
-                          <div className="selected-customer-card" style={{ borderColor: '#a5b4fc', backgroundColor: '#eef2ff' }}>
+                          <div className="selected-customer-card" style={{ borderColor: isChildrenPlan ? '#38bdf8' : '#a5b4fc', backgroundColor: isChildrenPlan ? '#f0f9ff' : '#eef2ff' }}>
                             <div className="selected-customer-details">
-                              <span className="selected-cust-badge" style={{ color: '#4f46e5' }}>Secondary Account Holder</span>
+                              <span className="selected-cust-badge" style={{ color: isChildrenPlan ? '#0284c7' : '#4f46e5' }}>
+                                {isChildrenPlan ? 'Assigned Parent / Guardian' : 'Secondary Account Holder'}
+                              </span>
                               <div className="selected-cust-name">
                                 <strong>CUST-{String(selectedSecondaryCustomer.customer_id).padStart(3, '0')}</strong> — {selectedSecondaryCustomer.full_name}
                               </div>
-                              <div className="selected-cust-nic">NIC: {selectedSecondaryCustomer.national_id} | Phone: {selectedSecondaryCustomer.phone || '-'}</div>
+                              <div className="selected-cust-nic">NIC: {selectedSecondaryCustomer.national_id} | Phone: {selectedSecondaryCustomer.phone || '-'} | DOB: {selectedSecondaryCustomer.dob}</div>
                             </div>
                             <button
                               type="button"
