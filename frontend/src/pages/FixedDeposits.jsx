@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Clock, Percent, ShieldCheck, RefreshCw, Search, X, RotateCcw, Check, ChevronDown, Lock } from 'lucide-react';
 import './FixedDeposits.css';
-import { getFDPlans, getFixedDeposits, getAccounts, createFixedDeposit, closeFixedDeposit } from '../api';
+import { getFDPlans, getFixedDeposits, getAccounts, getAgents, createFixedDeposit, closeFixedDeposit } from '../api';
 
 const ICONS = [Clock, Percent, ShieldCheck];
 const COLORS = ['blue', 'purple', 'green'];
@@ -10,6 +10,7 @@ const FixedDeposits = () => {
   const [fdPlans, setFdPlans] = useState([]);
   const [fixedDeposits, setFixedDeposits] = useState([]);
   const [accounts, setAccounts] = useState([]);
+  const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [tenureFilter, setTenureFilter] = useState('All');
@@ -19,6 +20,15 @@ const FixedDeposits = () => {
   const [error, setError] = useState(null);
   const [formSuccess, setFormSuccess] = useState(null);
 
+  // Close FD Modal state
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  const [closingFD, setClosingFD] = useState(null);
+  const [fdCloseSearchQuery, setFdCloseSearchQuery] = useState('');
+  const [isFdCloseDropdownOpen, setIsFdCloseDropdownOpen] = useState(false);
+  const [closingAgentId, setClosingAgentId] = useState('');
+  const [closingReason, setClosingReason] = useState('');
+  const [closeSubmitting, setCloseSubmitting] = useState(false);
+
   // Form states
   const [selectedAccountId, setSelectedAccountId] = useState('');
   const [accountSearchQuery, setAccountSearchQuery] = useState('');
@@ -27,6 +37,7 @@ const FixedDeposits = () => {
   const [principalAmount, setPrincipalAmount] = useState('');
 
   const accountDropdownRef = useRef(null);
+  const fdCloseDropdownRef = useRef(null);
 
   useEffect(() => {
     loadData();
@@ -36,6 +47,9 @@ const FixedDeposits = () => {
     const handleClickOutside = (e) => {
       if (accountDropdownRef.current && !accountDropdownRef.current.contains(e.target)) {
         setIsAccountDropdownOpen(false);
+      }
+      if (fdCloseDropdownRef.current && !fdCloseDropdownRef.current.contains(e.target)) {
+        setIsFdCloseDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -48,23 +62,70 @@ const FixedDeposits = () => {
     try {
       setLoading(true);
       setError(null);
-      const [plansRes, fdsRes, accountsRes] = await Promise.all([
+      const [plansRes, fdsRes, accountsRes, agentsRes] = await Promise.all([
         getFDPlans(),
         getFixedDeposits(),
-        getAccounts()
+        getAccounts(),
+        getAgents()
       ]);
       setFdPlans(plansRes.data || []);
       setFixedDeposits(fdsRes.data || []);
       setAccounts(accountsRes.data || []);
+      setAgents(agentsRes.data || []);
 
       if (plansRes.data && plansRes.data.length > 0) {
         setSelectedPlanId(plansRes.data[0].fd_plan_id);
+      }
+      if (agentsRes.data && agentsRes.data.length > 0) {
+        setClosingAgentId(String(agentsRes.data[0].agent_id));
       }
     } catch (err) {
       console.error('Error loading FD data:', err);
       setError('Failed to fetch fixed deposits from database.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenCloseModal = () => {
+    setClosingFD(null);
+    setFdCloseSearchQuery('');
+    setClosingReason('');
+    if (agents.length > 0) {
+      setClosingAgentId(String(agents[0].agent_id));
+    }
+    setIsCloseModalOpen(true);
+  };
+
+  const handleConfirmCloseFD = async (e) => {
+    e.preventDefault();
+    if (!closingFD) {
+      alert('Please search and select the Fixed Deposit to close.');
+      return;
+    }
+    if (!closingAgentId) {
+      alert('Please select an authorizing agent.');
+      return;
+    }
+    if (!closingReason.trim()) {
+      alert('Please enter a reason for closing the Fixed Deposit.');
+      return;
+    }
+
+    try {
+      setCloseSubmitting(true);
+      await closeFixedDeposit(closingFD.fd_id);
+      alert(`Fixed Deposit FD-${String(closingFD.fd_id).padStart(4, '0')} closed successfully.\nPrincipal of ${formatCurrency(closingFD.principal_amount)} returned to linked account #${closingFD.account_id}.\nReason: ${closingReason}`);
+      setIsCloseModalOpen(false);
+      setClosingFD(null);
+      setFdCloseSearchQuery('');
+      setClosingReason('');
+      loadData();
+    } catch (err) {
+      console.error('Error closing FD:', err);
+      alert(err.response?.data?.detail || 'Failed to close fixed deposit.');
+    } finally {
+      setCloseSubmitting(false);
     }
   };
 
@@ -187,6 +248,18 @@ const FixedDeposits = () => {
     return accNo.includes(q) || holder.includes(q) || id.includes(q);
   });
 
+  // Filter active FDs available to be closed
+  const filteredFDsToClose = fixedDeposits.filter(fd => {
+    if (fd.status === 'Closed') return false;
+    if (!fdCloseSearchQuery.trim()) return true;
+    const q = fdCloseSearchQuery.toLowerCase().trim();
+    const fdId = `fd-${String(fd.fd_id).padStart(4, '0')}`.toLowerCase();
+    const accId = `account #${fd.account_id}`.toLowerCase();
+    const accNo = (fd.account_number || '').toLowerCase();
+    const holder = (fd.customer_name || '').toLowerCase();
+    return fdId.includes(q) || accId.includes(q) || accNo.includes(q) || holder.includes(q);
+  });
+
   const selectedAccount = accounts.find(a => String(a.account_id) === String(selectedAccountId));
   const selectedPlan = fdPlans.find(p => p.fd_plan_id === Number(selectedPlanId));
 
@@ -197,6 +270,25 @@ const FixedDeposits = () => {
           <h2>Fixed Deposits</h2>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button
+            type="button"
+            className="btn-outline"
+            style={{
+              borderColor: '#f87171',
+              color: '#dc2626',
+              backgroundColor: '#fff',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+            onClick={handleOpenCloseModal}
+          >
+            <X size={18} /> Close Fixed Deposit
+          </button>
           <button className="btn-primary" onClick={handleOpenModal}>
             <Plus size={18} /> Open Fixed Deposit
           </button>
@@ -323,19 +415,18 @@ const FixedDeposits = () => {
                 <th>Start Date</th>
                 <th>Maturity Date</th>
                 <th>Status</th>
-                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: '#7F8C8D' }}>
                     Loading fixed deposits from database...
                   </td>
                 </tr>
               ) : filteredFDs.length === 0 ? (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: 'center', padding: '2.5rem', color: '#7F8C8D' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '2.5rem', color: '#7F8C8D' }}>
                     {hasActiveFilters ? (
                       <div>
                         <p style={{ margin: 0, fontSize: '0.95rem' }}>
@@ -368,28 +459,6 @@ const FixedDeposits = () => {
                       <span className={`badge ${fd.status === 'Active' ? 'badge-success' : fd.status === 'Closed' ? 'badge-error' : 'badge-warning'}`}>
                         {fd.status}
                       </span>
-                    </td>
-                    <td>
-                      {fd.status !== 'Closed' ? (
-                        <button
-                          type="button"
-                          className="btn-outline"
-                          style={{
-                            padding: '4px 10px',
-                            fontSize: '0.75rem',
-                            color: '#DC2626',
-                            borderColor: '#FCA5A5',
-                            backgroundColor: '#FEF2F2',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => handleCloseFD(fd)}
-                          title="Close this fixed deposit and return principal to linked account"
-                        >
-                          Close FD
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 500 }}>Closed</span>
-                      )}
                     </td>
                   </tr>
                 ))
@@ -564,6 +633,192 @@ const FixedDeposits = () => {
                 <button type="button" className="btn-outline" onClick={() => setIsModalOpen(false)}>Cancel</button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
                   {submitting ? 'Creating...' : 'Create Fixed Deposit'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Close Fixed Deposit Modal */}
+      {isCloseModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content modal-content-large">
+            <div className="modal-header">
+              <h3 style={{ color: '#dc2626' }}>Close Fixed Deposit</h3>
+              <button className="close-btn" onClick={() => setIsCloseModalOpen(false)}>×</button>
+            </div>
+            <form onSubmit={handleConfirmCloseFD}>
+              <div className="modal-body">
+                <div className="form-grid">
+                  {/* FD Search & Select */}
+                  <div className="form-group col-span-2">
+                    <label>Search & Select Fixed Deposit to Close *</label>
+                    <div className="customer-search-wrapper" ref={fdCloseDropdownRef}>
+                      <div className="customer-search-bar">
+                        <div className="customer-search-input-wrap">
+                          <Search size={16} className="search-icon-modal" />
+                          <input
+                            type="text"
+                            placeholder="Search by FD ID (e.g. FD-0001), account no, or customer name..."
+                            value={fdCloseSearchQuery}
+                            onFocus={() => setIsFdCloseDropdownOpen(true)}
+                            onChange={(e) => {
+                              setFdCloseSearchQuery(e.target.value);
+                              setIsFdCloseDropdownOpen(true);
+                            }}
+                          />
+                          {fdCloseSearchQuery && (
+                            <button
+                              type="button"
+                              className="clear-search-btn"
+                              onClick={() => {
+                                setFdCloseSearchQuery('');
+                                setIsFdCloseDropdownOpen(true);
+                              }}
+                              title="Clear search"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Dropdown list of FDs */}
+                      {isFdCloseDropdownOpen && (
+                        <div className="customer-search-results-popover">
+                          <div className="customer-search-popover-header">
+                            <span>Available FDs to Close ({filteredFDsToClose.length})</span>
+                            <span className="search-popover-hint">Click FD to select</span>
+                          </div>
+                          <div className="customer-search-results-list">
+                            {filteredFDsToClose.length > 0 ? (
+                              filteredFDsToClose.map(fd => {
+                                const isSelected = closingFD && closingFD.fd_id === fd.fd_id;
+                                return (
+                                  <div
+                                    key={fd.fd_id}
+                                    className={`customer-search-result-item ${isSelected ? 'selected' : ''}`}
+                                    onClick={() => {
+                                      setClosingFD(fd);
+                                      setIsFdCloseDropdownOpen(false);
+                                    }}
+                                  >
+                                    <div className="cust-item-main">
+                                      <div className="cust-item-title">
+                                        <span className="cust-item-id">FD-{String(fd.fd_id).padStart(4, '0')}</span>
+                                        <span className="cust-item-name">{fd.account_number ? `${fd.account_number} (#${fd.account_id})` : `Account #${fd.account_id}`}</span>
+                                      </div>
+                                      <div className="cust-item-sub">
+                                        <span>Principal: <strong>{formatCurrency(fd.principal_amount)}</strong></span>
+                                        <span>• Tenure: {fd.term_months} Mo ({fd.interest_rate}%)</span>
+                                        <span>• Status: {fd.status}</span>
+                                      </div>
+                                    </div>
+                                    {isSelected && <Check size={16} className="text-primary" />}
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="customer-search-empty">
+                                No active fixed deposits match "{fdCloseSearchQuery}".
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Selected FD Card */}
+                      {closingFD && (
+                        <div className="selected-customer-card" style={{ borderColor: '#fca5a5', backgroundColor: '#fef2f2' }}>
+                          <div className="selected-customer-details">
+                            <span className="selected-cust-badge" style={{ color: '#dc2626' }}>Selected FD for Closure</span>
+                            <div className="selected-cust-name">
+                              <strong>FD-{String(closingFD.fd_id).padStart(4, '0')}</strong> — Linked to Account #{closingFD.account_id} {closingFD.account_number ? `(${closingFD.account_number})` : ''}
+                            </div>
+                            <div className="selected-cust-nic">
+                              Principal to Refund: <strong>{formatCurrency(closingFD.principal_amount)}</strong> | Tenure: {closingFD.term_months} Months ({closingFD.interest_rate}%) | Maturity: {closingFD.maturity_date}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-change-cust"
+                            onClick={() => {
+                              setClosingFD(null);
+                              setIsFdCloseDropdownOpen(true);
+                            }}
+                          >
+                            Change
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Agent Selection */}
+                  <div className="form-group col-span-2">
+                    <label>Select Authorizing Agent *</label>
+                    <select
+                      value={closingAgentId}
+                      onChange={(e) => setClosingAgentId(e.target.value)}
+                      required
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '0.95rem',
+                        fontWeight: 500,
+                        backgroundColor: '#fff',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="">-- Choose Agent --</option>
+                      {agents.map(ag => (
+                        <option key={ag.agent_id} value={ag.agent_id}>
+                          {ag.agent_name} {ag.branch_name ? `(${ag.branch_name})` : `(Agent #${ag.agent_id})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Reason for Closure */}
+                  <div className="form-group col-span-2">
+                    <label>Reason for Closing *</label>
+                    <textarea
+                      rows={3}
+                      placeholder="e.g. Early premature withdrawal, maturity payout, emergency fund requirement..."
+                      value={closingReason}
+                      onChange={(e) => setClosingReason(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '0.95rem',
+                        fontFamily: 'inherit',
+                        resize: 'vertical'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn-outline" onClick={() => setIsCloseModalOpen(false)}>Cancel</button>
+                <button
+                  type="submit"
+                  style={{
+                    backgroundColor: '#dc2626',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 18px',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                  disabled={closeSubmitting}
+                >
+                  {closeSubmitting ? 'Closing FD...' : 'Confirm FD Closure'}
                 </button>
               </div>
             </form>
