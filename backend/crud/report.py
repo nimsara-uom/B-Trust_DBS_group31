@@ -21,25 +21,32 @@ def get_account_transaction_summary(cursor):
     query = """
         select
             sa.account_number as account_number,
-            c.full_name as customer_name,
+            group_concat(c.full_name separator ', ') as customer_name,
             sp.plan_name as plan_name,
-            count(tr.account_id) as number_of_transactions,
-            sum(tr.amount) as total_amount,
+            coalesce(tr.txn_count, 0) as number_of_transactions,
+            coalesce(tr.txn_sum, 0.00) as total_amount,
             sa.current_balance as current_balance
         from SAVINGSACCOUNT sa 
             join ACCOUNTHOLDER a on a.account_id = sa.account_id
             join CUSTOMER c on a.customer_id = c.customer_id
             join SAVINGSPLAN sp on sa.plan_id = sp.plan_id
-            join BANK_TRANSACTION tr on sa.account_id = tr.account_id
+            left join (
+                select 
+                    account_id, 
+                    count(transaction_id) as txn_count, 
+                    sum(amount) as txn_sum 
+                from BANK_TRANSACTION 
+                group by account_id
+            ) as tr on sa.account_id = tr.account_id
         group by 
             sa.account_id,
             sa.account_number, 
-            c.customer_id,
-            c.full_name,
             sp.plan_id,
             sp.plan_name,
-            sa.current_balance
-        order by count(tr.account_id) desc;
+            sa.current_balance,
+            tr.txn_count,
+            tr.txn_sum
+        order by coalesce(tr.txn_count, 0) desc;
     """
     cursor.execute(query)
     return cursor.fetchall()
