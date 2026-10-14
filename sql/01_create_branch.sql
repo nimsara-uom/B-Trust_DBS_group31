@@ -1,20 +1,3 @@
--- =============================================================
--- MIMS – Microbanking & Interest Management System
--- Group 31 | University of Moratuwa
--- Dialect : MySQL 8+
--- =============================================================
-
--- Commit 01 : BRANCH table
--- ----------------------------------------------------------------
--- A Branch is a physical service location of B-Trust.
--- Everything else in the system (agents, customers, accounts)
--- ultimately traces back to a branch.
---
--- 3NF check:
--- PK → branch_id
--- All other columns (branch_name, address, phone) depend ONLY
--- on branch_id. No transitive dependency here.
--- ----------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS BRANCH (
     branch_id INT NOT NULL AUTO_INCREMENT,
