@@ -110,7 +110,7 @@ their database responsibilities to the corresponding Phase 2 application work.
 | Dananjaya P.D.L.K (`240118J`) | **Member 3:** Fixed Deposit Logic & Triggers | **Member 2:** Branches, Agents & Customers CRUD APIs |
 | Yasarathna G.L.R.S (`240741L`) | **Member 4:** Automated Interest Engine (`sp_RunMonthlyEngine`) | **Member 3:** Savings Accounts, Plans & Holders APIs |
 | Kodithuwakku K.A.N.N (`240351P`) | **Member 1:** Core Schema & Master Setup | **Member 4:** Transactions (Deposits, Withdrawals) & Procedures |
-| Jayawardana Y.G.L.S (`240294R`) | **Member 5:** Data Population & Reporting Queries | **Member 5:** Fixed Deposits & 5 Management Reports |
+| Jayawardana Y.G.L.S (`240294R`) | **Member 5:** Data Population & Reporting Queries | **Member 5:** Fixed Deposits, Customer Interface & 6 Management Reports |
 
 ### Phase 1: MySQL Database & Core Logic Engine
 
@@ -136,7 +136,7 @@ their database responsibilities to the corresponding Phase 2 application work.
 
 #### Jayawardana Y.G.L.S — Data Population & Reporting Queries (Member 5)
 - Prepared Data Manipulation Language (DML) scripts and seed datasets (branches, agents, customers, plans, FDs, and transactions).
-- Authored the 5 complex multi-table management report queries (`SELECT` with advanced `JOIN`s, `GROUP BY`, and aggregate metrics).
+- Authored the 6 complex multi-table management report queries (`SELECT` with advanced `JOIN`s, `GROUP BY`, and aggregate metrics).
 - Validated business reporting outputs and operational integrity.
 
 ### Phase 2: FastAPI Backend & API Layer (Swagger UI / QA)
@@ -158,9 +158,10 @@ their database responsibilities to the corresponding Phase 2 application work.
   - Transaction models, route handlers, and DB calls for `/api/transactions/deposit`, `/api/transactions/withdraw`, and transaction queries with filters.
   - Integration with stored procedures `sp_ProcessDeposit` and `sp_ProcessWithdrawal`, returning clean HTTP 400 error responses on trigger/overdraft rejections.
 
-- **Jayawardana Y.G.L.S (Backend Member 5 — Fixed Deposits & 5 Management Reports):**
+- **Jayawardana Y.G.L.S (Backend Member 5 — Fixed Deposits, Customer Interface & 6 Management Reports):**
   - Fixed deposit schemas, CRUD queries, and endpoints (`/api/fd-plans`, `/api/fixed-deposits`, `/api/interest-engine/run`).
-  - Implemented the 5 mandatory management report endpoints (`/api/reports/*`) and aggregation queries.
+  - Customer self-service interface / portal integration (profile, account balances, transaction history, active FDs, and fund transfers).
+  - Implemented the 6 mandatory management report endpoints (`/api/reports/*`) and aggregation queries.
 
 - **Shared QA & Validation:**
   - Full API and database connectivity validation using auto-generated Swagger UI (`/docs`).
