@@ -4,7 +4,7 @@ from mysql.connector import pooling
 from fastapi import HTTPException, status
 from config import settings
 
-# SSL is required for Aiven MySQL. Set DB_USE_SSL=true in .env when deploying.
+# SSL is required for  MySQL. Set DB_USE_SSL=true in .env when deploying.
 _use_ssl: bool = os.getenv("DB_USE_SSL", "false").lower() == "true"
 
 # Create a connection pool to connect to the database
